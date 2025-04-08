@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -28,7 +28,8 @@ import {
   Bell,
   Folder,
   Star,
-  Clock
+  Clock,
+  Linkedin
 } from "lucide-react";
 
 export default function Sidebar({ isSidebarOpen, isMobile, toggleSidebar }) {
@@ -44,34 +45,72 @@ export default function Sidebar({ isSidebarOpen, isMobile, toggleSidebar }) {
     bluesky: false,
     googlebusiness: false,
     mastodon: false,
+    linkedin: false,
   });
   const [isChannelsOpen, setIsChannelsOpen] = useState(true);
   const [isTeamsOpen, setIsTeamsOpen] = useState(false);
   const [isProjectsOpen, setIsProjectsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const toggleChannels = () => setIsChannelsOpen(prev => !prev);
   const toggleTeams = () => setIsTeamsOpen(prev => !prev);
   const toggleProjects = () => setIsProjectsOpen(prev => !prev);
 
-  const connectSocialMedia = async (platform) => {
-    setConnectedAccounts(prev => ({ ...prev, [platform]: true }));
+  // Check LinkedIn connection status on mount
+  useEffect(() => {
+    checkLinkedInStatus();
+  }, []);
+
+  const checkLinkedInStatus = async () => {
     try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      toast({
-        title: "Success",
-        description: `${platform.charAt(0).toUpperCase() + platform.slice(1)} connected successfully!`,
-      });
+      const response = await fetch('http://localhost:3000/api/linkedin/token');
+      const data = await response.json();
+      if (data.status === 'connected') {
+        setConnectedAccounts(prev => ({ ...prev, linkedin: true }));
+      }
     } catch (error) {
-      setConnectedAccounts(prev => ({ ...prev, [platform]: false }));
-      toast({
-        title: "Error",
-        description: `Failed to connect ${platform}`,
-        variant: "destructive",
-      });
+      console.error('Error checking LinkedIn status:', error);
     }
   };
 
+  const connectSocialMedia = async (platform) => {
+    if (platform === 'linkedin') {
+      setIsLoading(true);
+      try {
+        // Redirect to LinkedIn auth
+        window.location.href = 'http://localhost:5000/api/linkedin/auth';
+      } catch (error) {
+        setIsLoading(false);
+        toast.error('Failed to initiate LinkedIn connection');
+      }
+    } else {
+      // Handle other platforms
+      setConnectedAccounts(prev => ({ ...prev, [platform]: true }));
+      try {
+        await new Promise(resolve => setTimeout(resolve, 500));
+        toast.success(`${platform.charAt(0).toUpperCase() + platform.slice(1)} connected successfully!`);
+      } catch (error) {
+        setConnectedAccounts(prev => ({ ...prev, [platform]: false }));
+        toast.error(`Failed to connect ${platform}`);
+      }
+    }
+  };
+
+  // Handle callback from LinkedIn
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const status = urlParams.get('status');
+    if (status === 'connected') {
+      setConnectedAccounts(prev => ({ ...prev, linkedin: true }));
+      setIsLoading(false);
+      toast.success('LinkedIn connected successfully!');
+      // Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
+
   const channels = [
+    { platform: "linkedin", Icon: Linkedin, label: "LinkedIn" },
     { platform: "facebook", Icon: Facebook },
     { platform: "instagram", Icon: Instagram },
     { platform: "twitter", Icon: Twitter, label: "Twitter / X" },
@@ -142,16 +181,18 @@ export default function Sidebar({ isSidebarOpen, isMobile, toggleSidebar }) {
                   <div key={platform} className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Icon className="h-5 w-5" />
-                      <span className="text-sm capitalize">{label}</span>
+                      <span className="text-sm">{label}</span>
                     </div>
                     <Button
                       size="sm"
                       variant={connectedAccounts[platform] ? "outline" : "default"}
                       onClick={() => !connectedAccounts[platform] && connectSocialMedia(platform)}
-                      disabled={connectedAccounts[platform]}
+                      disabled={connectedAccounts[platform] || (platform === 'linkedin' && isLoading)}
                     >
                       {connectedAccounts[platform] ? (
                         <Badge variant="secondary">Connected</Badge>
+                      ) : isLoading && platform === 'linkedin' ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
                       ) : (
                         "Connect"
                       )}
@@ -269,16 +310,16 @@ export default function Sidebar({ isSidebarOpen, isMobile, toggleSidebar }) {
               <DropdownMenuSeparator />
               <DropdownMenuItem>
                 <User className="mr-2 h-4 w-4" />
-                Profile
+                <span>Profile</span>
               </DropdownMenuItem>
               <DropdownMenuItem>
                 <Settings className="mr-2 h-4 w-4" />
-                Settings
+                <span>Settings</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem>
                 <LogOut className="mr-2 h-4 w-4" />
-                Log out
+                <span>Log out</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
