@@ -14,7 +14,9 @@ export default function LandingPage() {
             <div className="size-8 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white">
               AP
             </div>
+            <Link href={'/'}>
             <span>AutoPulse</span>
+            </Link>
           </div>
           <nav className="hidden md:flex gap-6">
             <Link href="#features" className="text-sm font-medium hover:text-primary">
@@ -56,7 +58,7 @@ export default function LandingPage() {
                 >
                   Automate Your{" "}
                   <span className="bg-gradient-to-r from-purple-600 to-blue-500 bg-clip-text text-transparent">
-                    LinkedIn Presence
+                    Social Presence
                   </span>
                 </motion.h1>
                 <motion.p
@@ -81,7 +83,7 @@ export default function LandingPage() {
                     <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                   </Button>
                 </Link>
-                <Link href="#demo">
+                <Link href="/dashboard">
                   <Button variant="outline" size="lg">
                     View Demo
                   </Button>

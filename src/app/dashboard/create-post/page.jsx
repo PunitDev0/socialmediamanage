@@ -1,140 +1,196 @@
 "use client";
-import { useState, useRef } from "react"
-import { CalendarIcon, Clock, Image, Linkedin, Paperclip, X, Sparkles, Hash, Save, Send } from "lucide-react"
-import { motion, AnimatePresence } from "framer-motion"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Calendar } from "@/components/ui/calendar"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Slider } from "@/components/ui/slider"
-import { Switch } from "@/components/ui/switch"
-import { Label } from "@/components/ui/label"
-import { RichTextEditor } from "@/components/rich-text-editor"
-import { MediaGallery } from "@/components/media-gallery"
-import { PostTemplates } from "@/components/post-templates"
-import { AIContentSuggestions } from "@/components/ai-content-suggestions"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { format } from "date-fns"
-import { cn } from "@/lib/utils"
+import { useState, useRef } from "react";
+import { useForm, Controller } from "react-hook-form";
+import { CalendarIcon, Clock, Image as ImageIcon, Linkedin, Paperclip, X, Sparkles, Hash, Save, Send } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Calendar } from "@/components/ui/calendar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+import { RichTextEditor } from "@/components/rich-text-editor";
+import { MediaGallery } from "@/components/media-gallery";
+import { PostTemplates } from "@/components/post-templates";
+import { AIContentSuggestions } from "@/components/ai-content-suggestions";
 
 export default function CreatePostPage() {
-  const [postContent, setPostContent] = useState("")
-  const [selectedImage, setSelectedImage] = useState(null)
-  const [date, setDate] = useState()
-  const [time, setTime] = useState("12:00")
-  const [isDragging, setIsDragging] = useState(false)
-  const [hashtags, setHashtags] = useState([])
-  const [newHashtag, setNewHashtag] = useState("")
-  const [isAIDialogOpen, setIsAIDialogOpen] = useState(false)
-  const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false)
-  const [isMediaGalleryOpen, setIsMediaGalleryOpen] = useState(false)
-  const [postTone, setPostTone] = useState(50) // 0-100 scale: professional to casual
-  const [enableAutoHashtags, setEnableAutoHashtags] = useState(true)
-  const [isSaving, setIsSaving] = useState(false)
-  const [isScheduling, setIsScheduling] = useState(false)
-  const [saveSuccess, setSaveSuccess] = useState(false)
-  const fileInputRef = useRef(null)
+  const [selectedImages, setSelectedImages] = useState([]);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isScheduling, setIsScheduling] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [isAIDialogOpen, setIsAIDialogOpen] = useState(false);
+  const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false);
+  const [isMediaGalleryOpen, setIsMediaGalleryOpen] = useState(false);
+  const [enableAutoHashtags, setEnableAutoHashtags] = useState(true);
+  const fileInputRef = useRef(null);
+
+  const { control, handleSubmit, setValue, watch, formState: { errors } } = useForm({
+    defaultValues: {
+      content: "",
+      hashtags: [],
+      newHashtag: "",
+      date: null,
+      time: "12:00",
+      postTone: 50,
+      visibility: "public",
+    },
+  });
+
+  const hashtags = watch("hashtags");
+  const newHashtag = watch("newHashtag");
 
   const handleImageUpload = (e) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        setSelectedImage(e.target?.result)
-      }
-      reader.readAsDataURL(file)
-    }
-  }
+    const files = Array.from(e.target.files).slice(0, 5 - selectedImages.length);
+    const readers = files.map((file) => {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve({ file, preview: e.target?.result });
+        reader.readAsDataURL(file);
+      });
+    });
+    Promise.all(readers).then((results) => {
+      setSelectedImages((prev) => [...prev, ...results]);
+    });
+  };
 
   const handleDragOver = (e) => {
-    e.preventDefault()
-    setIsDragging(true)
-  }
+    e.preventDefault();
+    setIsDragging(true);
+  };
 
   const handleDragLeave = () => {
-    setIsDragging(false)
-  }
+    setIsDragging(false);
+  };
 
   const handleDrop = (e) => {
-    e.preventDefault()
-    setIsDragging(false)
+    e.preventDefault();
+    setIsDragging(false);
+    const files = Array.from(e.dataTransfer.files)
+      .filter((file) => file.type.startsWith("image/"))
+      .slice(0, 5 - selectedImages.length);
+    const readers = files.map((file) => {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve({ file, preview: e.target?.result });
+        reader.readAsDataURL(file);
+      });
+    });
+    Promise.all(readers).then((results) => {
+      setSelectedImages((prev) => [...prev, ...results]);
+    });
+  };
 
-    const file = e.dataTransfer.files?.[0]
-    if (file && file.type.startsWith("image/")) {
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        setSelectedImage(e.target?.result)
-      }
-      reader.readAsDataURL(file)
-    }
-  }
-
-  const removeImage = () => {
-    setSelectedImage(null)
+  const removeImage = (index) => {
+    setSelectedImages((prev) => prev.filter((_, i) => i !== index));
     if (fileInputRef.current) {
-      fileInputRef.current.value = ""
+      fileInputRef.current.value = "";
     }
-  }
+  };
 
   const addHashtag = () => {
     if (newHashtag && !hashtags.includes(newHashtag)) {
-      setHashtags([...hashtags, newHashtag])
-      setNewHashtag("")
+      setValue("hashtags", [...hashtags, newHashtag]);
+      setValue("newHashtag", "");
     }
-  }
+  };
 
   const removeHashtag = (tag) => {
-    setHashtags(hashtags.filter((t) => t !== tag))
-  }
+    setValue("hashtags", hashtags.filter((t) => t !== tag));
+  };
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter") {
-      e.preventDefault()
-      addHashtag()
+      e.preventDefault();
+      addHashtag();
     }
-  }
+  };
 
-  const saveAsDraft = () => {
-    setIsSaving(true)
-    // Simulate API call
-    setTimeout(() => {
-      setIsSaving(false)
-      setSaveSuccess(true)
-      setTimeout(() => setSaveSuccess(false), 3000)
-    }, 1500)
-  }
+  const saveAsDraft = async (data) => {
+    setIsSaving(true);
+    try {
+      // Simulate API call for draft
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (error) {
+      console.error('Save draft error:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
-  const schedulePost = () => {
-    setIsScheduling(true)
-    // Simulate API call
-    setTimeout(() => {
-      setIsScheduling(false)
-      window.location.href = "/dashboard/scheduled-posts"
-    }, 1500)
-  }
+  const schedulePost = async (data) => {
+    if (!data.date || !data.time) {
+      alert('Please select a date and time');
+      return;
+    }
+
+    setIsScheduling(true);
+    const token = localStorage.getItem('accessToken');
+    const scheduledTime = new Date(`${format(data.date, 'yyyy-MM-dd')}T${data.time}:00Z`).toISOString();
+    const formData = new FormData();
+    formData.append('content', data.content);
+    formData.append('hashtags', JSON.stringify(data.hashtags));
+    formData.append('scheduledTime', scheduledTime);
+    selectedImages.forEach((img) => {
+      formData.append('media', img.file);
+    });
+
+    try {
+      const response = await fetch('http://localhost:5000/post/linkedin/schedule', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+      const result = await response.json();
+      if (result.success) {
+        console.log('Scheduled:', result.schedule.id);
+        setValue("content", "");
+        setValue("hashtags", []);
+        setValue("date", null);
+        setValue("time", "12:00");
+        setSelectedImages([]);
+        window.location.href = "/dashboard/scheduled-posts";
+      } else {
+        console.error('Error:', result.message);
+      }
+    } catch (error) {
+      console.error('Schedule error:', error);
+    } finally {
+      setIsScheduling(false);
+    }
+  };
 
   const selectFromGallery = (imageUrl) => {
-    setSelectedImage(imageUrl)
-    setIsMediaGalleryOpen(false)
-  }
+    // Simulate file object for gallery images
+    setSelectedImages((prev) => [...prev, { file: null, preview: imageUrl }]);
+    setIsMediaGalleryOpen(false);
+  };
 
   const applyTemplate = (template) => {
-    setPostContent(template)
-    setIsTemplateDialogOpen(false)
-  }
+    setValue("content", template);
+    setIsTemplateDialogOpen(false);
+  };
 
   const applyAISuggestion = (suggestion) => {
-    setPostContent(suggestion)
-    setIsAIDialogOpen(false)
-  }
+    setValue("content", suggestion);
+    setIsAIDialogOpen(false);
+  };
 
-  // Suggested hashtags based on content
   const suggestedHashtags = [
     "Marketing",
     "SocialMedia",
@@ -144,10 +200,10 @@ export default function CreatePostPage() {
     "B2B",
     "Networking",
     "ProfessionalDevelopment",
-  ]
+  ];
 
   return (
-    (<div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold tracking-tight">Create Post</h1>
         <p className="text-muted-foreground">Create and schedule your LinkedIn post</p>
@@ -157,7 +213,8 @@ export default function CreatePostPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
-          className="space-y-4">
+          className="space-y-4"
+        >
           <Tabs defaultValue="editor" className="w-full">
             <TabsList className="w-full grid grid-cols-3">
               <TabsTrigger value="editor">Editor</TabsTrigger>
@@ -167,7 +224,7 @@ export default function CreatePostPage() {
             <TabsContent value="editor" className="space-y-4 mt-4">
               <Card>
                 <CardContent className="p-6">
-                  <div className="space-y-4">
+                  <form onSubmit={handleSubmit(schedulePost)} className="space-y-4">
                     <div className="flex items-center gap-2">
                       <Avatar className="h-10 w-10">
                         <AvatarImage src="/placeholder-user.jpg" alt="User" />
@@ -179,57 +236,89 @@ export default function CreatePostPage() {
                       </div>
                     </div>
 
-                    <RichTextEditor
-                      value={postContent}
-                      onChange={setPostContent}
-                      placeholder="What do you want to share?" />
+                    <div>
+                      <Controller
+                        name="content"
+                        control={control}
+                        rules={{ required: "Content is required" }}
+                        render={({ field }) => (
+                          <RichTextEditor
+                            value={field.value}
+                            onChange={field.onChange}
+                            placeholder="What do you want to share?"
+                          />
+                        )}
+                      />
+                      {errors.content && (
+                        <p className="text-red-500 text-xs mt-1">{errors.content.message}</p>
+                      )}
+                    </div>
 
                     <div
                       className={cn(
                         "border-2 border-dashed rounded-md p-6 transition-colors",
                         isDragging ? "border-primary bg-primary/5" : "border-muted-foreground/20",
-                        selectedImage ? "p-2" : "p-6"
+                        selectedImages.length > 0 ? "p-2" : "p-6"
                       )}
                       onDragOver={handleDragOver}
                       onDragLeave={handleDragLeave}
-                      onDrop={handleDrop}>
-                      {selectedImage ? (
-                        <div className="relative">
-                          <img
-                            src={selectedImage || "/placeholder.svg"}
-                            alt="Preview"
-                            className="rounded-md w-full h-auto max-h-[300px] object-cover" />
-                          <Button
-                            variant="destructive"
-                            size="icon"
-                            className="absolute top-2 right-2 h-8 w-8 rounded-full"
-                            onClick={removeImage}>
-                            <X className="h-4 w-4" />
-                          </Button>
+                      onDrop={handleDrop}
+                    >
+                      {selectedImages.length > 0 ? (
+                        <div className="grid grid-cols-2 gap-2">
+                          {selectedImages.map((img, index) => (
+                            <div key={index} className="relative">
+                              <img
+                                src={img.preview || "/placeholder.svg"}
+                                alt={`Preview ${index + 1}`}
+                                className="rounded-md w-full h-auto max-h-[150px] object-cover"
+                              />
+                              <Button
+                                variant="destructive"
+                                size="icon"
+                                className="absolute top-2 right-2 h-6 w-6 rounded-full"
+                                onClick={() => removeImage(index)}
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          ))}
                         </div>
                       ) : (
                         <div className="flex flex-col items-center justify-center gap-2 text-center">
-                          <Image className="h-8 w-8 text-muted-foreground" />
+                          <ImageIcon className="h-8 w-8 text-muted-foreground" />
                           <div>
-                            <p className="font-medium">Drag and drop an image</p>
-                            <p className="text-xs text-muted-foreground">or click to browse</p>
+                            <p className="font-medium">Drag and drop images</p>
+                            <p className="text-xs text-muted-foreground">or click to browse (up to 5)</p>
                           </div>
                           <div className="flex gap-2">
-                            <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => fileInputRef.current?.click()}
+                            >
                               <Paperclip className="mr-2 h-4 w-4" />
                               Browse
                             </Button>
-                            <Button variant="outline" size="sm" onClick={() => setIsMediaGalleryOpen(true)}>
-                              <Image className="mr-2 h-4 w-4" />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setIsMediaGalleryOpen(true)}
+                            >
+                              <ImageIcon className="mr-2 h-4 w-4" />
                               Gallery
                             </Button>
                           </div>
                           <input
                             type="file"
                             accept="image/*"
+                            multiple
                             className="hidden"
                             ref={fileInputRef}
-                            onChange={handleImageUpload} />
+                            onChange={handleImageUpload}
+                          />
                         </div>
                       )}
                     </div>
@@ -241,15 +330,18 @@ export default function CreatePostPage() {
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button
+                                type="button"
                                 variant="ghost"
                                 size="sm"
                                 className="h-8 w-8 p-0"
-                                onClick={() => setEnableAutoHashtags(!enableAutoHashtags)}>
+                                onClick={() => setEnableAutoHashtags(!enableAutoHashtags)}
+                              >
                                 <Sparkles
                                   className={cn(
                                     "h-4 w-4",
                                     enableAutoHashtags ? "text-purple-500" : "text-muted-foreground"
-                                  )} />
+                                  )}
+                                />
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent>
@@ -263,22 +355,30 @@ export default function CreatePostPage() {
                           <Badge key={index} variant="secondary" className="px-3 py-1">
                             #{tag}
                             <Button
+                              type="button"
                               variant="ghost"
                               size="sm"
                               className="h-4 w-4 p-0 ml-2"
-                              onClick={() => removeHashtag(tag)}>
+                              onClick={() => removeHashtag(tag)}
+                            >
                               <X className="h-3 w-3" />
                             </Button>
                           </Badge>
                         ))}
                       </div>
                       <div className="flex gap-2">
-                        <Input
-                          placeholder="Add hashtag"
-                          value={newHashtag}
-                          onChange={(e) => setNewHashtag(e.target.value)}
-                          onKeyDown={handleKeyDown} />
-                        <Button onClick={addHashtag} size="sm">
+                        <Controller
+                          name="newHashtag"
+                          control={control}
+                          render={({ field }) => (
+                            <Input
+                              placeholder="Add hashtag"
+                              {...field}
+                              onKeyDown={handleKeyDown}
+                            />
+                          )}
+                        />
+                        <Button type="button" onClick={addHashtag} size="sm">
                           <Hash className="h-4 w-4" />
                         </Button>
                       </div>
@@ -293,9 +393,10 @@ export default function CreatePostPage() {
                                 className="cursor-pointer hover:bg-secondary"
                                 onClick={() => {
                                   if (!hashtags.includes(tag)) {
-                                    setHashtags([...hashtags, tag])
+                                    setValue("hashtags", [...hashtags, tag]);
                                   }
-                                }}>
+                                }}
+                              >
                                 #{tag}
                               </Badge>
                             ))}
@@ -306,45 +407,82 @@ export default function CreatePostPage() {
 
                     <div className="space-y-2">
                       <p className="text-sm font-medium">Schedule Post</p>
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 flex-col">
                         <Popover>
                           <PopoverTrigger asChild>
-                            <Button variant="outline" className="w-full justify-start text-left font-normal">
+                            <Button
+                              variant="outline"
+                              className={cn(
+                                "w-full justify-start text-left font-normal",
+                                !watch("date") && "text-muted-foreground"
+                              )}
+                            >
                               <CalendarIcon className="mr-2 h-4 w-4" />
-                              {date ? format(date, "PPP") : "Pick a date"}
+                              {watch("date") ? format(watch("date"), "PPP") : "Pick a date"}
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0">
-                            <Calendar mode="single" selected={date} onSelect={setDate} initialFocus />
+                            <Controller
+                              name="date"
+                              control={control}
+                              rules={{ required: "Date is required" }}
+                              render={({ field }) => (
+                                <Calendar
+                                  mode="single"
+                                  selected={field.value}
+                                  onSelect={field.onChange}
+                                  initialFocus
+                                />
+                              )}
+                            />
                           </PopoverContent>
                         </Popover>
+                        {errors.date && (
+                          <p className="text-red-500 text-xs mt-1">{errors.date.message}</p>
+                        )}
 
                         <div className="flex items-center gap-2">
                           <Clock className="h-4 w-4 text-muted-foreground" />
-                          <Select value={time} onValueChange={setTime}>
-                            <SelectTrigger className="w-[110px]">
-                              <SelectValue placeholder="Select time" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {Array.from({ length: 24 }).map((_, hour) =>
-                                [0, 30].map((minute) => {
-                                  const formattedHour = hour.toString().padStart(2, "0")
-                                  const formattedMinute = minute.toString().padStart(2, "0")
-                                  const timeValue = `${formattedHour}:${formattedMinute}`
-                                  return (
-                                    (<SelectItem key={timeValue} value={timeValue}>
-                                      {timeValue}
-                                    </SelectItem>)
-                                  );
-                                }))}
-                            </SelectContent>
-                          </Select>
+                          <Controller
+                            name="time"
+                            control={control}
+                            rules={{ required: "Time is required" }}
+                            render={({ field }) => (
+                              <Select value={field.value} onValueChange={field.onChange}>
+                                <SelectTrigger className="w-[110px]">
+                                  <SelectValue placeholder="Select time" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {Array.from({ length: 24 }).map((_, hour) =>
+                                    [0, 30].map((minute) => {
+                                      const formattedHour = hour.toString().padStart(2, "0");
+                                      const formattedMinute = minute.toString().padStart(2, "0");
+                                      const timeValue = `${formattedHour}:${formattedMinute}`;
+                                      return (
+                                        <SelectItem key={timeValue} value={timeValue}>
+                                          {timeValue}
+                                        </SelectItem>
+                                      );
+                                    })
+                                  )}
+                                </SelectContent>
+                              </Select>
+                            )}
+                          />
                         </div>
+                        {errors.time && (
+                          <p className="text-red-500 text-xs mt-1">{errors.time.message}</p>
+                        )}
                       </div>
                     </div>
 
                     <div className="flex justify-end gap-2">
-                      <Button variant="outline" onClick={saveAsDraft} disabled={isSaving}>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleSubmit(saveAsDraft)}
+                        disabled={isSaving}
+                      >
                         {isSaving ? (
                           <>Saving...</>
                         ) : (
@@ -360,12 +498,13 @@ export default function CreatePostPage() {
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0 }}
-                            className="absolute right-20 bottom-4 bg-green-500 text-white px-3 py-1 rounded-md text-sm">
+                            className="absolute right-20 bottom-4 bg-green-500 text-white px-3 py-1 rounded-md text-sm"
+                          >
                             Saved successfully!
                           </motion.div>
                         )}
                       </AnimatePresence>
-                      <Button onClick={schedulePost} disabled={isScheduling}>
+                      <Button type="submit" disabled={isScheduling}>
                         {isScheduling ? (
                           <>Scheduling...</>
                         ) : (
@@ -376,7 +515,7 @@ export default function CreatePostPage() {
                         )}
                       </Button>
                     </div>
-                  </div>
+                  </form>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -401,7 +540,8 @@ export default function CreatePostPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.2 }}
-          className="space-y-4">
+          className="space-y-4"
+        >
           <Card>
             <CardContent className="p-6">
               <div className="space-y-4">
@@ -419,16 +559,22 @@ export default function CreatePostPage() {
                   </div>
                   <div className="space-y-3">
                     <p className="text-sm whitespace-pre-wrap">
-                      {postContent || "Your post content will appear here..."}
+                      {watch("content") || "Your post content will appear here..."}
                     </p>
                     {hashtags.length > 0 && (
                       <p className="text-sm text-blue-500">{hashtags.map((tag) => `#${tag}`).join(" ")}</p>
                     )}
-                    {selectedImage && (
-                      <img
-                        src={selectedImage || "/placeholder.svg"}
-                        alt="Preview"
-                        className="rounded-md w-full h-auto max-h-[300px] object-cover" />
+                    {selectedImages.length > 0 && (
+                      <div className="grid grid-cols-2 gap-2">
+                        {selectedImages.map((img, index) => (
+                          <img
+                            key={index}
+                            src={img.preview || "/placeholder.svg"}
+                            alt={`Preview ${index + 1}`}
+                            className="rounded-md w-full h-auto max-h-[150px] object-cover"
+                          />
+                        ))}
+                      </div>
                     )}
                   </div>
                   <div className="mt-4 flex items-center gap-4 text-muted-foreground">
@@ -443,10 +589,12 @@ export default function CreatePostPage() {
                         strokeWidth="2"
                         strokeLinecap="round"
                         strokeLinejoin="round"
-                        className="lucide lucide-thumbs-up">
+                        className="lucide lucide-thumbs-up"
+                      >
                         <path d="M7 10v12" />
                         <path
-                          d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2h0a3.13 3.13 0 0 1 3 3.88Z" />
+                          d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2h0a3.13 3.13 0 0 1 3 3.88Z"
+                        />
                       </svg>
                       Like
                     </button>
@@ -461,7 +609,8 @@ export default function CreatePostPage() {
                         strokeWidth="2"
                         strokeLinecap="round"
                         strokeLinejoin="round"
-                        className="lucide lucide-message-square">
+                        className="lucide lucide-message-square"
+                      >
                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                       </svg>
                       Comment
@@ -477,7 +626,8 @@ export default function CreatePostPage() {
                         strokeWidth="2"
                         strokeLinecap="round"
                         strokeLinejoin="round"
-                        className="lucide lucide-repeat">
+                        className="lucide lucide-repeat"
+                      >
                         <path d="m17 2 4 4-4 4" />
                         <path d="M3 11v-1a4 4 0 0 1 4-4h14" />
                         <path d="m7 22-4-4 4-4" />
@@ -496,7 +646,8 @@ export default function CreatePostPage() {
                         strokeWidth="2"
                         strokeLinecap="round"
                         strokeLinejoin="round"
-                        className="lucide lucide-send">
+                        className="lucide lucide-send"
+                      >
                         <path d="m22 2-7 20-4-9-9-4Z" />
                         <path d="M22 2 11 13" />
                       </svg>
@@ -518,17 +669,24 @@ export default function CreatePostPage() {
                   <div className="flex items-center justify-between">
                     <Label htmlFor="tone">Content Tone</Label>
                     <span className="text-xs text-muted-foreground">
-                      {postTone < 33 ? "Professional" : postTone < 66 ? "Balanced" : "Casual"}
+                      {watch("postTone") < 33 ? "Professional" : watch("postTone") < 66 ? "Balanced" : "Casual"}
                     </span>
                   </div>
-                  <Slider
-                    id="tone"
-                    min={0}
-                    max={100}
-                    step={1}
-                    value={[postTone]}
-                    onValueChange={(value) => setPostTone(value[0])}
-                    className="w-full" />
+                  <Controller
+                    name="postTone"
+                    control={control}
+                    render={({ field }) => (
+                      <Slider
+                        id="tone"
+                        min={0}
+                        max={100}
+                        step={1}
+                        value={[field.value]}
+                        onValueChange={(value) => field.onChange(value[0])}
+                        className="w-full"
+                      />
+                    )}
+                  />
                   <div className="flex justify-between text-xs text-muted-foreground">
                     <span>Professional</span>
                     <span>Casual</span>
@@ -541,18 +699,22 @@ export default function CreatePostPage() {
                       <Linkedin className="h-4 w-4" />
                       <span className="text-sm">LinkedIn</span>
                     </div>
-                    <div className="flex items-center">
-                      <Select defaultValue="public">
-                        <SelectTrigger className="w-[140px]">
-                          <SelectValue placeholder="Visibility" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="public">Public</SelectItem>
-                          <SelectItem value="connections">Connections</SelectItem>
-                          <SelectItem value="private">Private</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    <Controller
+                      name="visibility"
+                      control={control}
+                      render={({ field }) => (
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <SelectTrigger className="w-[140px]">
+                            <SelectValue placeholder="Visibility" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="public">Public</SelectItem>
+                            <SelectItem value="connections">Connections</SelectItem>
+                            <SelectItem value="private">Private</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
                   </div>
 
                   <div className="flex items-center justify-between">
@@ -562,7 +724,8 @@ export default function CreatePostPage() {
                     <Switch
                       id="auto-hashtags"
                       checked={enableAutoHashtags}
-                      onCheckedChange={setEnableAutoHashtags} />
+                      onCheckedChange={setEnableAutoHashtags}
+                    />
                   </div>
 
                   <div className="flex items-center justify-between">
@@ -582,9 +745,11 @@ export default function CreatePostPage() {
 
                 <div className="pt-2">
                   <Button
+                    type="button"
                     variant="outline"
                     className="w-full"
-                    onClick={() => setIsAIDialogOpen(true)}>
+                    onClick={() => setIsAIDialogOpen(true)}
+                  >
                     <Sparkles className="mr-2 h-4 w-4" />
                     Get AI Content Suggestions
                   </Button>
@@ -594,7 +759,7 @@ export default function CreatePostPage() {
           </Card>
         </motion.div>
       </div>
-      {/* Media Gallery Dialog */}
+
       <Dialog open={isMediaGalleryOpen} onOpenChange={setIsMediaGalleryOpen}>
         <DialogContent className="sm:max-w-[800px]">
           <DialogHeader>
@@ -606,7 +771,6 @@ export default function CreatePostPage() {
           </div>
         </DialogContent>
       </Dialog>
-    </div>)
+    </div>
   );
 }
-

@@ -14,7 +14,7 @@ import { AddPostForm } from "@/components/add-post-form"
 
 export default function DashboardPage() {
   const [isAddPostOpen, setIsAddPostOpen] = useState(false)
-
+  
   const handleAddPost = (values) => {
     console.log("New post values:", values)
     // Here you would typically send this data to your API
