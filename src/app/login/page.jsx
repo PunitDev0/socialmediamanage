@@ -9,11 +9,11 @@ import { Label } from "@/components/ui/label";
 import { motion } from "framer-motion";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
-import { useMutation } from "@tanstack/react-query";
 import { loginUser } from "@/services/auth.service";
 
 export default function LoginPage() {
   const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
   const {
@@ -27,23 +27,19 @@ export default function LoginPage() {
     },
   });
 
-  // Define mutation for login
-  const mutation = useMutation({
-    mutationFn: loginUser,
-    onSuccess: (data) => {
-      console.log("Login successful:", data);
-      // Redirect to dashboard
-      router.push("/dashboard");
-    },
-    onError: (error) => {
-      console.error("Login failed:", error);
-      setError(error.message || "Failed to log in. Please try again.");
-    },
-  });
-
   const onSubmit = async (data) => {
     setError(null);
-    mutation.mutate(data);
+    setIsLoading(true);
+    try {
+      const response = await loginUser(data);
+      console.log("Login successful:", response);
+      router.push("/dashboard"); // Redirect to dashboard
+    } catch (error) {
+      console.error("Login failed:", error.message);
+      setError(error.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -151,7 +147,7 @@ export default function LoginPage() {
 
                   <div className="text-sm">
                     <Link
-                      href="/forgot-password" // Updated to a proper route
+                      href="/forgot-password"
                       className="font-medium text-primary hover:underline"
                       aria-label="Forgot your password"
                     >
@@ -164,9 +160,9 @@ export default function LoginPage() {
                   <Button
                     type="submit"
                     className="w-full"
-                    disabled={mutation.isLoading}
+                    disabled={isLoading}
                   >
-                    {mutation.isLoading ? "Signing in..." : "Sign in"}
+                    {isLoading ? "Signing in..." : "Sign in"}
                   </Button>
                 </div>
               </form>

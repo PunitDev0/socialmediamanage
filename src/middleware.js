@@ -8,9 +8,10 @@ export async function middleware(req) {
   const loginPath = "/login";
 
   // Handle protected routes (/dashboard, /profile)
+  const token = req.cookies.get("accesstoken")?.value;
+  console.log(token);
   if (protectedPaths.includes(req.nextUrl.pathname)) {
-    const token = req.cookies.get("accessToken")?.value;
-
+    
     if (!token) {
       return NextResponse.redirect(new URL("/login", req.url));
     }
@@ -38,11 +39,9 @@ export async function middleware(req) {
       try {
         const secret = new TextEncoder().encode(SECRET);
         await jwtVerify(token, secret);
-        // Redirect authenticated users to /dashboard
         return NextResponse.redirect(new URL("/dashboard", req.url));
       } catch (err) {
         console.error("Token verification failed for login redirect:", err.message);
-        // If token is invalid, allow access to /login
         return NextResponse.next();
       }
     }

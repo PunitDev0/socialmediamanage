@@ -23,6 +23,7 @@ import { RichTextEditor } from "@/components/rich-text-editor";
 import { MediaGallery } from "@/components/media-gallery";
 import { PostTemplates } from "@/components/post-templates";
 import { AIContentSuggestions } from "@/components/ai-content-suggestions";
+import axios from "axios";
 
 export default function CreatePostPage() {
   const [selectedImages, setSelectedImages] = useState([]);
@@ -149,14 +150,18 @@ export default function CreatePostPage() {
     });
 
     try {
-      const response = await fetch('http://localhost:5000/post/linkedin/schedule', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: formData,
-      });
-      const result = await response.json();
+      const response = await axios.post(
+        'http://localhost:5000/post/linkedin/schedule',
+        formData,
+        {
+          withCredentials: true, // Send accessToken cookie
+          headers: {
+            'Content-Type': 'multipart/form-data', // For file uploads
+          },
+        }
+      );
+  
+      const result = response.data; // axios automatically parses JSON
       if (result.success) {
         console.log('Scheduled:', result.schedule.id);
         setValue("content", "");
@@ -164,7 +169,7 @@ export default function CreatePostPage() {
         setValue("date", null);
         setValue("time", "12:00");
         setSelectedImages([]);
-        window.location.href = "/dashboard/scheduled-posts";
+        router.push('/dashboard/scheduled-posts'); // Use Next.js router for navigation
       } else {
         console.error('Error:', result.message);
       }
