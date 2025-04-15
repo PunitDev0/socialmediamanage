@@ -130,7 +130,7 @@ export default function LandingPage() {
                   Simple, Transparent Pricing
                 </h2>
                 <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl">
-                  Choose the plan that's right for you and start automating your LinkedIn presence today.
+                  Choose the plan thats right for you and start automating your LinkedIn presence today.
                 </p>
               </div>
             </div>
