@@ -62,6 +62,7 @@ export default function AnalyticsPage() {
           </Button>
         </div>
       </div>
+      <Tabs>
       <TabsContent value="overview" className="mt-0 space-y-6">
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {analyticsCards.map((card, index) => (
@@ -158,6 +159,7 @@ export default function AnalyticsPage() {
           </CardContent>
         </Card>
       </TabsContent>
+      </Tabs>
     </div>)
   );
 }
