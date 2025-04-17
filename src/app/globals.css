@@ -75,7 +75,7 @@
 .gradient-heading {
   @apply bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 dark:from-violet-400 dark:via-indigo-400 dark:to-purple-400 bg-clip-text text-transparent;
   background-size: 300% 300%;
-  animation: gradient 8s ease infinite;
+  /* animation: gradient 8s ease infinite; */
 }
 
 /* Improved dark mode styles */

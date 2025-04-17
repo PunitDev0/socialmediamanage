@@ -7,6 +7,8 @@ import { FaqSection } from "./faq-section"
 import { Footer } from "./footer"
 import { LoadingScreen } from "./loading-screen"
 import { ScrollToTop } from "./scroll-to-top"
+import { Header } from "./header"
+import ScatterText from "./scatter-text"
 
 export default function Home() {
   return (
@@ -14,6 +16,8 @@ export default function Home() {
       <LoadingScreen />
       <ScrollToTop />
       <main className="flex-1">
+      <Header />
+        {/* <ScatterText/> */}
         <HeroSection />
         <SocialProofSection />
         <FeatureSection />

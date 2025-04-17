@@ -1,7 +1,7 @@
 import React from "react"
 import "@/app/globals.css"
 import { Figtree } from "next/font/google"
-import { Header } from "@/components/HeroSection/header"
+// import { Header } from "@/components/HeroSection/header"
 import { ClientThemeWrapper } from "@/components/HeroSection/ClientThemeWrapper" 
 import Script from "next/script"
 
@@ -23,7 +23,6 @@ export default function RootLayout({ children }) {
         <link rel="preconnect" href="https://cdnjs.cloudflare.com" />
       </head>
       <body className={figtree.className}>
-          <Header />
           {children}
         <Script
           src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"

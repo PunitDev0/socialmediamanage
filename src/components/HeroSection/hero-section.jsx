@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input"
 import { Instagram, Twitter, Facebook, Linkedin, Youtube, TwitterIcon as TikTok, ArrowRight } from "lucide-react"
 import { gsap } from "gsap"
 import { motion } from "framer-motion"
+import ScatterText from "./scatter-text"
+import AnimatedIcons from "./Animted-Icons"
 
 export function HeroSection() {
   const sectionRef = useRef(null)
@@ -52,6 +54,7 @@ export function HeroSection() {
   return (
     <section ref={sectionRef} className="relative overflow-hidden py-20 md:py-32 mx-auto">
       {/* Background gradient */}
+      <AnimatedIcons/>
       <div className="absolute inset-0 bg-gradient-to-b from-lavender-50/50 to-sky-50/50 -z-10"></div>
 
       {/* Animated background shapes */}
@@ -82,9 +85,10 @@ export function HeroSection() {
           </motion.div>
 
           <div className="space-y-4 max-w-3xl">
-            <h1 ref={headingRef} className="text-4xl md:text-6xl font-bold tracking-tighter gradient-heading">
+            {/* <h1 ref={headingRef} className="text-4xl md:text-6xl font-bold tracking-tighter gradient-heading">
               Grow Your Reach with SocialSync
-            </h1>
+            </h1> */}
+            <ScatterText/>
             <p
               ref={descriptionRef}
               className="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed"

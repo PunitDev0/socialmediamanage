@@ -6,9 +6,9 @@ import React from 'react'
 function page() {
   return (
     <div>
-      {/* <CreatePostPage/> */}
+      <CreatePostPage/>
       {/* <CreateInstagramPostPage/> */}
-      <CreateFacebookPostPage/>
+      {/* <CreateFacebookPostPage/> */}
     </div>
   )
 }

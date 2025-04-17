@@ -57,9 +57,11 @@ export function Header() {
         </div>
         <div className="flex items-center gap-4">
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <Link href={'/login'}>
             <Button variant="ghost" className="hidden md:inline-flex">
               Login
             </Button>
+            </Link>
           </motion.div>
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <Button className="bg-gradient-to-r from-violet-500 to-indigo-500 hover:from-violet-600 hover:to-indigo-600 text-white shadow-md hover:shadow-lg transition-shadow">
@@ -87,9 +89,11 @@ export function Header() {
                 <Button className="mt-4 w-full bg-gradient-to-r from-violet-500 to-indigo-500 hover:from-violet-600 hover:to-indigo-600 text-white">
                   Get Started
                 </Button>
-                <Button variant="outline" className="w-full">
+               <Link href={'/login'}>
+               <Button variant="outline" className="w-full">
                   Login
                 </Button>
+               </Link>
               </nav>
             </SheetContent>
           </Sheet>
