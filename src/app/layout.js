@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense } from "react";
 import "@/app/globals.css";
 import { Figtree } from "next/font/google";
 // import { Header } from "@/components/HeroSection/header"
@@ -29,7 +29,12 @@ export default function RootLayout({ children }) {
         <link rel="preconnect" href="https://cdnjs.cloudflare.com" />
       </head>
       <body className={figtree.className}>
-        <ContextProviders>{children}</ContextProviders>
+        <ContextProviders>
+          <Suspense fallback={<div className="p-4 text-center">Loading...</div>}>
+            {children}
+          </Suspense>
+        </ContextProviders>
+
         <Script
           src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"
           strategy="afterInteractive"
