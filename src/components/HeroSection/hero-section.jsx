@@ -54,7 +54,6 @@ export function HeroSection() {
   return (
     <section ref={sectionRef} className="relative overflow-hidden py-20 md:py-32 mx-auto">
       {/* Background gradient */}
-      <AnimatedIcons/>
       <div className="absolute inset-0 bg-gradient-to-b from-lavender-50/50 to-sky-50/50 -z-10"></div>
 
       {/* Animated background shapes */}

@@ -11,9 +11,13 @@ import { DashboardChart } from "@/components/dashboard-chart"
 import { CalendarView } from "@/components/calendar-view"
 import { NotificationsList } from "@/components/notifications-list"
 import { AddPostForm } from "@/components/add-post-form"
+import { useParams, useSearchParams } from "next/navigation"
 
 export default function DashboardPage() {
   const [isAddPostOpen, setIsAddPostOpen] = useState(false)
+  const searchParams = useSearchParams()
+  const sync = searchParams.get('sync') // gets 'linkedin', 'facebook', etc.
+  console.log(sync);
   
   const handleAddPost = (values) => {
     console.log("New post values:", values)

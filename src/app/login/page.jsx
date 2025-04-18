@@ -1,21 +1,25 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { motion } from "framer-motion";
-import { useForm } from "react-hook-form";
-import { useRouter } from "next/navigation";
-import { loginUser } from "@/services/auth.service";
+import { useState } from "react"
+import Link from "next/link"
+import { ArrowLeft, Loader2, Check, Github, Mail } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Separator } from "@/components/ui/separator"
+import { Checkbox } from "@/components/ui/checkbox"
+import { motion, AnimatePresence } from "framer-motion"
+import { useForm } from "react-hook-form"
+import { useRouter } from "next/navigation"
+import { loginUser } from "@/services/auth.service"
+import { useAuth } from "@/context/AuthContext"
 
 export default function LoginPage() {
-  const [error, setError] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
-
+  const [error, setError] = useState(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [isSuccess, setIsSuccess] = useState(false)
+  const router = useRouter()
+  
   const {
     register,
     handleSubmit,
@@ -25,22 +29,27 @@ export default function LoginPage() {
       email: "",
       password: "",
     },
-  });
+  })
 
   const onSubmit = async (data) => {
-    setError(null);
-    setIsLoading(true);
+    setError(null)
+    setIsLoading(true)
     try {
-      const response = await loginUser(data);
-      console.log("Login successful:", response);
-      router.push("/dashboard"); // Redirect to dashboard
+      const response = await loginUser(data)
+      console.log("Login successful:", response)
+      setIsSuccess(true)
+
+      // Short delay before redirect for success animation
+      setTimeout(() => {
+        router.push("/dashboard") // Redirect to dashboard
+      }, 1000)
     } catch (error) {
-      console.error("Login failed:", error.message);
-      setError(error.message);
+      console.error("Login failed:", error.message)
+      setError(error.message || "Login failed. Please check your credentials.")
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -53,26 +62,28 @@ export default function LoginPage() {
         >
           <div className="mx-auto w-full max-w-sm lg:w-96">
             <div className="flex items-center gap-2 mb-8">
-              <Link href="/" className="flex items-center gap-2" aria-label="Back to home">
+              <Link
+                href="/"
+                className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="Back to home"
+              >
                 <ArrowLeft className="h-4 w-4" />
-                <span className="text-sm">Back to home</span>
+                <span className="text-sm font-medium">Back to home</span>
               </Link>
             </div>
             <div>
-              <div className="flex items-center gap-2 mb-2">
-                <div className="size-8 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white">
-                  AP
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex items-center justify-center">
+                  <SocialSyncLogo className="h-10 w-10" />
                 </div>
-                <h2 className="text-2xl font-bold tracking-tight">AutoPulse</h2>
+                <h2 className="text-2xl font-bold tracking-tight">SocialSync</h2>
               </div>
-              <h2 className="mt-2 text-3xl font-bold tracking-tight">
-                Sign in to your account
-              </h2>
+              <h2 className="mt-2 text-3xl font-bold tracking-tight">Welcome back</h2>
               <p className="mt-2 text-sm text-muted-foreground">
                 Don't have an account?{" "}
                 <Link
                   href="/signup"
-                  className="font-medium text-primary hover:underline"
+                  className="font-medium text-primary hover:text-primary/90 hover:underline transition-colors"
                   aria-label="Sign up"
                 >
                   Sign up
@@ -81,90 +92,136 @@ export default function LoginPage() {
             </div>
 
             <div className="mt-8">
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-                <div>
-                  <Label htmlFor="email">Email address</Label>
-                  <div className="mt-2">
-                    <Input
-                      id="email"
-                      type="email"
-                      autoComplete="email"
-                      className="block w-full"
-                      {...register("email", {
-                        required: "Email is required",
-                        pattern: {
-                          value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                          message: "Invalid email address",
-                        },
-                      })}
-                    />
-                    {errors.email && (
-                      <p className="mt-1 text-sm text-red-600">
-                        {errors.email.message}
-                      </p>
-                    )}
-                  </div>
+              <div className="space-y-4">
+                <Button variant="outline" className="w-full" type="button">
+                  <Github className="mr-2 h-4 w-4" />
+                  Continue with GitHub
+                </Button>
+                <Button variant="outline" className="w-full" type="button">
+                  <Mail className="mr-2 h-4 w-4" />
+                  Continue with Google
+                </Button>
+              </div>
+
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <Separator className="w-full" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+                </div>
+              </div>
+
+              <AnimatePresence mode="wait">
+                {error && (
+                  <motion.div
+                    className="p-3 rounded-md bg-red-50 text-red-600 text-sm mb-4"
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                  >
+                    {error}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+                <div className="space-y-1">
+                  <Label htmlFor="email" className="text-sm font-medium">
+                    Email address
+                  </Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    autoComplete="email"
+                    className={`block w-full ${errors.email ? "border-red-500 focus-visible:ring-red-500" : ""}`}
+                    {...register("email", {
+                      required: "Email is required",
+                      pattern: {
+                        value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                        message: "Invalid email address",
+                      },
+                    })}
+                  />
+                  {errors.email && (
+                    <motion.p className="mt-1 text-sm text-red-600" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                      {errors.email.message}
+                    </motion.p>
+                  )}
                 </div>
 
-                <div>
-                  <Label htmlFor="password">Password</Label>
-                  <div className="mt-2">
-                    <Input
-                      id="password"
-                      type="password"
-                      autoComplete="current-password"
-                      className="block w-full"
-                      {...register("password", {
-                        required: "Password is required",
-                        minLength: {
-                          value: 8,
-                          message: "Password must be at least 8 characters",
-                        },
-                      })}
-                    />
-                    {errors.password && (
-                      <p className="mt-1 text-sm text-red-600">
-                        {errors.password.message}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {error && <p className="text-sm text-red-600">{error}</p>}
-
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <input
-                      id="remember-me"
-                      name="remember-me"
-                      type="checkbox"
-                      className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                    />
-                    <Label htmlFor="remember-me" className="ml-2 block text-sm">
-                      Remember me
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="password" className="text-sm font-medium">
+                      Password
                     </Label>
-                  </div>
-
-                  <div className="text-sm">
                     <Link
                       href="/forgot-password"
-                      className="font-medium text-primary hover:underline"
+                      className="text-xs font-medium text-primary hover:text-primary/90 hover:underline transition-colors"
                       aria-label="Forgot your password"
                     >
-                      Forgot your password?
+                      Forgot password?
                     </Link>
                   </div>
+                  <Input
+                    id="password"
+                    type="password"
+                    autoComplete="current-password"
+                    className={`block w-full ${errors.password ? "border-red-500 focus-visible:ring-red-500" : ""}`}
+                    {...register("password", {
+                      required: "Password is required",
+                      minLength: {
+                        value: 8,
+                        message: "Password must be at least 8 characters",
+                      },
+                    })}
+                  />
+                  {errors.password && (
+                    <motion.p className="mt-1 text-sm text-red-600" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                      {errors.password.message}
+                    </motion.p>
+                  )}
                 </div>
 
-                <div>
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? "Signing in..." : "Sign in"}
-                  </Button>
+                <div className="flex items-center space-x-2">
+                  <Checkbox id="remember-me" />
+                  <Label htmlFor="remember-me" className="text-sm font-medium">
+                    Remember me for 30 days
+                  </Label>
                 </div>
+
+                <Button type="submit" className="w-full h-11 relative" disabled={isLoading || isSuccess}>
+                  <AnimatePresence mode="wait">
+                    {isLoading && (
+                      <motion.div
+                        key="loading"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="absolute inset-0 flex items-center justify-center"
+                      >
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      </motion.div>
+                    )}
+                    {isSuccess && (
+                      <motion.div
+                        key="success"
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="absolute inset-0 flex items-center justify-center"
+                      >
+                        <Check className="h-5 w-5" />
+                      </motion.div>
+                    )}
+                    <motion.span
+                      animate={{ opacity: isLoading || isSuccess ? 0 : 1 }}
+                      className="flex items-center justify-center"
+                    >
+                      Sign in
+                    </motion.span>
+                  </AnimatePresence>
+                </Button>
               </form>
             </div>
           </div>
@@ -175,18 +232,96 @@ export default function LoginPage() {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.8 }}
         >
-          <div className="absolute inset-0 h-full w-full bg-gradient-to-r from-purple-600 to-blue-500 flex items-center justify-center">
-            <div className="p-8 text-white max-w-md">
-              <h2 className="text-3xl font-bold mb-4">
-                Automate your social presence
-              </h2>
-              <p className="text-lg opacity-90">
+          <div className="absolute inset-0 h-full w-full bg-gradient-to-br from-cyan-500 via-blue-500 to-purple-600 flex items-center justify-center overflow-hidden">
+            <div className="absolute inset-0 bg-[url('/placeholder.svg?height=800&width=800')] opacity-10 bg-repeat"></div>
+            <motion.div
+              className="p-8 text-white max-w-md z-10"
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.3, duration: 0.8 }}
+            >
+              <h2 className="text-3xl font-bold mb-4">Amplify your social presence</h2>
+              <p className="text-lg opacity-90 mb-6">
                 Schedule posts, analyze performance, and grow your network with our intelligent automation platform.
               </p>
+              <div className="flex space-x-2">
+                <div className="flex -space-x-2">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div
+                      key={i}
+                      className="w-10 h-10 rounded-full border-2 border-white bg-blue-400/30 flex items-center justify-center text-xs font-medium"
+                    >
+                      {["JD", "MK", "AS", "TW"][i - 1]}
+                    </div>
+                  ))}
+                </div>
+                <div className="ml-2 flex items-center text-sm">
+                  <span>Join 10,000+ users already growing with SocialSync</span>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Animated background elements */}
+            <div className="absolute inset-0 overflow-hidden">
+              {[...Array(5)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  className="absolute rounded-full bg-white/10 backdrop-blur-sm"
+                  style={{
+                    width: `${Math.random() * 300 + 100}px`,
+                    height: `${Math.random() * 300 + 100}px`,
+                    left: `${Math.random() * 100}%`,
+                    top: `${Math.random() * 100}%`,
+                  }}
+                  initial={{
+                    x: Math.random() * 100 - 50,
+                    y: Math.random() * 100 - 50,
+                    opacity: 0.1 + Math.random() * 0.2,
+                  }}
+                  animate={{
+                    x: Math.random() * 100 - 50,
+                    y: Math.random() * 100 - 50,
+                    opacity: 0.1 + Math.random() * 0.2,
+                  }}
+                  transition={{
+                    duration: 20 + Math.random() * 10,
+                    repeat: Number.POSITIVE_INFINITY,
+                    repeatType: "reverse",
+                    ease: "linear",
+                  }}
+                />
+              ))}
             </div>
           </div>
         </motion.div>
       </div>
     </div>
-  );
+  )
+}
+
+function SocialSyncLogo({ className }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 64 64"
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="32" cy="32" r="30" className="fill-blue-50 stroke-blue-500" />
+      <path
+        d="M20 32 A12 12 0 0 1 32 20 A12 12 0 0 1 44 32 A12 12 0 0 1 32 44 A12 12 0 0 1 20 32 Z"
+        className="stroke-blue-500"
+        strokeDasharray="4 2"
+      />
+      <circle cx="32" cy="20" r="4" className="fill-blue-500" />
+      <circle cx="20" cy="32" r="4" className="fill-cyan-500" />
+      <circle cx="32" cy="44" r="4" className="fill-purple-500" />
+      <circle cx="44" cy="32" r="4" className="fill-indigo-500" />
+      <path d="M32 20 L20 32 L32 44 L44 32 Z" className="stroke-blue-400" strokeDasharray="2 2" />
+    </svg>
+  )
 }
