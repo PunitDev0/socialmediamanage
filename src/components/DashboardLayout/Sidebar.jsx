@@ -37,13 +37,14 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import axios from "axios";
 
 export default function Sidebar({ isSidebarOpen, isMobile, toggleSidebar }) {
   const { user, loading, logout } = useAuth();
   const [isChannelsOpen, setIsChannelsOpen] = useState(true);
   const [isTeamsOpen, setIsTeamsOpen] = useState(false);
   const [isProjectsOpen, setIsProjectsOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState({});
   const router = useRouter();
 
   const toggleChannels = () => setIsChannelsOpen((prev) => !prev);
@@ -82,38 +83,80 @@ export default function Sidebar({ isSidebarOpen, isMobile, toggleSidebar }) {
     }
   }, [user]);
 
-  // Handle LinkedIn connection callback
+  // Handle connection callbacks (LinkedIn, YouTube, Facebook, Pinterest, etc.)
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const status = urlParams.get("status");
+    const youtubeConnected = urlParams.get("youtubeConnected");
+    const facebookConnected = urlParams.get("facebookConnected");
+    const pinterestConnected = urlParams.get("pinterestConnected");
+
     if (status === "connected") {
       setConnectedAccounts((prev) => ({ ...prev, linkedin: true }));
-      setIsLoading(false);
+      setIsLoading((prev) => ({ ...prev, linkedin: false }));
       toast.success("LinkedIn connected successfully!");
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (youtubeConnected === "true") {
+      setConnectedAccounts((prev) => ({ ...prev, youtube: true }));
+      setIsLoading((prev) => ({ ...prev, youtube: false }));
+      toast.success("YouTube connected successfully!");
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (facebookConnected === "true") {
+      setConnectedAccounts((prev) => ({ ...prev, facebook: true }));
+      setIsLoading((prev) => ({ ...prev, facebook: false }));
+      toast.success("Facebook connected successfully!");
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (pinterestConnected === "true") {
+      setConnectedAccounts((prev) => ({ ...prev, pinterest: true }));
+      setIsLoading((prev) => ({ ...prev, pinterest: false }));
+      toast.success("Pinterest connected successfully!");
       window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, []);
 
+  // Connect to social media platforms
   const connectSocialMedia = async (platform) => {
-    if (platform === "linkedin") {
-      setIsLoading(true);
-      try {
-        window.location.href = "http://localhost:5000/api/linkedin/auth";
-      } catch (error) {
-        setIsLoading(false);
-        toast.error("Failed to initiate LinkedIn connection");
+    setIsLoading((prev) => ({ ...prev, [platform]: true }));
+    try {
+      let authUrl;
+      if (platform === "linkedin") {
+        const response = await axios.get("http://localhost:5000/api/linkedin/auth", {
+          headers: { Authorization: `Bearer ${user.token}` },
+          withCredentials: true,
+        });
+        authUrl = response.data.authUrl;
+      } else if (platform === "youtube") {
+        const response = await axios.get(
+          "http://localhost:5000/api/youtube/auth",
+          {
+            withCredentials: true,
+          }
+        );
+        authUrl = response.data.authUrl;
+      } else if (platform === "facebook") {
+        const response = await axios.get(
+          "http://localhost:5000/api/facebook/auth",
+          {
+            withCredentials: true,
+          }
+        );
+        authUrl = response.data.authUrl;
+      } else if (platform === "pinterest") {
+        const response = await axios.get(
+          "http://localhost:5000/api/pinterest/auth",
+          {
+            
+            withCredentials: true,
+          }
+        );
+        authUrl = response.data.authUrl;
+      } else {
+        throw new Error(`Connecting ${platform} is not implemented yet.`);
       }
-    } else if(platform == "facebook"){
-      setIsLoading(true);
-      try {
-        window.location.href = "http://localhost:5000/api/facebook/auth";
-      } catch (error) {
-        setIsLoading(false);
-        toast.error("Failed to initiate LinkedIn connection");
-      }
-    }else {
-      // Placeholder for other platforms
-      toast.info(`Connecting ${platform} is not implemented yet.`);
+      window.location.href = authUrl;
+    } catch (error) {
+      setIsLoading((prev) => ({ ...prev, [platform]: false }));
+      toast.error(`Failed to initiate ${platform} connection: ${error.message}`);
     }
   };
 
@@ -220,9 +263,9 @@ export default function Sidebar({ isSidebarOpen, isMobile, toggleSidebar }) {
                           size="sm"
                           variant="default"
                           onClick={() => connectSocialMedia(platform)}
-                          disabled={isLoading && platform === "linkedin"}
+                          disabled={isLoading[platform]}
                         >
-                          {isLoading && platform === "linkedin" ? (
+                          {isLoading[platform] ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
                           ) : (
                             "Connect"
