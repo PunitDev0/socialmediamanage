@@ -1,7 +1,6 @@
 import { Controller } from "react-hook-form";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { CalendarIcon, Clock } from "lucide-react";
 import { format } from "date-fns";
@@ -12,6 +11,7 @@ export default function SchedulePicker({ control, watch, errors }) {
     <div className="space-y-2">
       <p className="text-sm font-medium">Schedule Post</p>
       <div className="flex gap-2 flex-col">
+        {/* Date Picker */}
         <Popover>
           <PopoverTrigger asChild>
             <Button
@@ -45,6 +45,7 @@ export default function SchedulePicker({ control, watch, errors }) {
           <p className="text-red-500 text-xs mt-1">{errors.date.message}</p>
         )}
 
+        {/* Time Picker */}
         <div className="flex items-center gap-2">
           <Clock className="h-4 w-4 text-muted-foreground" />
           <Controller
@@ -52,25 +53,15 @@ export default function SchedulePicker({ control, watch, errors }) {
             control={control}
             rules={{ required: "Time is required" }}
             render={({ field }) => (
-              <Select value={field.value} onValueChange={field.onChange}>
-                <SelectTrigger className="w-[110px]">
-                  <SelectValue placeholder="Select time" />
-                </SelectTrigger>
-                <SelectContent>
-                  {Array.from({ length: 24 }).map((_, hour) =>
-                    [0, 30].map((minute) => {
-                      const formattedHour = hour.toString().padStart(2, "0");
-                      const formattedMinute = minute.toString().padStart(2, "0");
-                      const timeValue = `${formattedHour}:${formattedMinute}`;
-                      return (
-                        <SelectItem key={timeValue} value={timeValue}>
-                          {timeValue}
-                        </SelectItem>
-                      );
-                    })
-                  )}
-                </SelectContent>
-              </Select>
+              <input
+                type="time"
+                value={field.value || ""}
+                onChange={(e) => field.onChange(e.target.value)}
+                className={cn(
+                  "w-[110px] border rounded-md p-2 text-sm",
+                  errors.time && "border-red-500"
+                )}
+              />
             )}
           />
         </div>
