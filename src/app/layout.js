@@ -27,6 +27,7 @@ export default function RootLayout({ children }) {
     >
       <head>
         <link rel="preconnect" href="https://cdnjs.cloudflare.com" />
+        <meta name="google-site-verification" content="mqAHT7zvLB6rcRZwZJQIMDhsXtQVVQ-ISGX0RcqJ1-g" />
       </head>
       <body className={figtree.className}>
         <ContextProviders>
