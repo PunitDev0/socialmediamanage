@@ -1,0 +1,77 @@
+
+  export const initialPosts = [
+    {
+      id: "1",
+      title: "New Product Launch",
+      content: "We're excited to announce our new product line! Check it out today.",
+      platform: "instagram",
+      scheduledTime: "2025-05-10T09:00:00.000Z",
+      imageUrl: "/placeholder.svg?height=300&width=300",
+    },
+    {
+      id: "2",
+      title: "Weekly Tips",
+      content: "Here are 5 tips to improve your productivity this week!",
+      platform: "twitter",
+      scheduledTime: "2025-05-10T14:30:00.000Z",
+    },
+    {
+      id: "3",
+      title: "Customer Spotlight",
+      content: "Meet our customer of the month and learn how they use our products.",
+      platform: "linkedin",
+      scheduledTime: "2025-05-11T10:00:00.000Z",
+      imageUrl: "/placeholder.svg?height=300&width=300",
+    },
+    {
+      id: "4",
+      title: "Flash Sale",
+      content: "24-hour flash sale! Use code FLASH25 for 25% off all products.",
+      platform: "facebook",
+      scheduledTime: "2025-05-12T08:00:00.000Z",
+    },
+    {
+      id: "5",
+      title: "Tutorial Video",
+      content: "Watch our new tutorial on how to get the most out of our platform.",
+      platform: "youtube",
+      scheduledTime: "2025-05-13T16:00:00.000Z",
+    },
+    {
+      id: "6",
+      title: "Industry News",
+      content: "Breaking: New industry regulations announced. Here's what it means for you.",
+      platform: "twitter",
+      scheduledTime: "2025-05-14T11:00:00.000Z",
+    },
+    {
+      id: "7",
+      title: "Behind the Scenes",
+      content: "Take a peek behind the scenes at our latest photoshoot!",
+      platform: "instagram",
+      scheduledTime: "2025-05-15T13:30:00.000Z",
+      imageUrl: "/placeholder.svg?height=300&width=300",
+    },
+    {
+      id: "8",
+      title: "Case Study",
+      content: "How Company X increased their ROI by 200% using our platform.",
+      platform: "linkedin",
+      scheduledTime: "2025-05-16T09:30:00.000Z",
+    },
+    {
+      id: "9",
+      title: "Weekend Special",
+      content: "Weekend special! Free shipping on all orders over $50.",
+      platform: "facebook",
+      scheduledTime: "2025-05-17T10:00:00.000Z",
+    },
+    {
+      id: "10",
+      title: "Product Demo",
+      content: "Join us for a live product demo this Tuesday at 2 PM EST.",
+      platform: "youtube",
+      scheduledTime: "2025-05-18T14:00:00.000Z",
+    },
+  ]
+  

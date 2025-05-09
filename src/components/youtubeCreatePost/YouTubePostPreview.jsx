@@ -13,7 +13,7 @@ export default function YouTubePostPreview({ watch, selectedThumbnail, selectedI
       <CardContent className="p-6">
         <div className="space-y-4">
           <p className="text-sm font-medium">YouTube Post Preview</p>
-          <div className="rounded-md border p-4 bg-white dark:bg-gray-900">
+          <div className="rounded-md border p-4  ">
             <div className="flex items-center gap-2 mb-3">
               <Avatar className="h-10 w-10">
                 <AvatarImage src="/placeholder-user.jpg" alt="User" />
@@ -34,7 +34,7 @@ export default function YouTubePostPreview({ watch, selectedThumbnail, selectedI
                       className="rounded-md w-full h-auto max-h-[200px] object-cover"
                     />
                   ) : (
-                    <div className="bg-gray-200 dark:bg-gray-700 rounded-md w-full h-[200px] flex items-center justify-center">
+                    <div className=" rounded-md w-full h-[200px] flex items-center justify-center">
                       <p className="text-muted-foreground">No thumbnail</p>
                     </div>
                   )}

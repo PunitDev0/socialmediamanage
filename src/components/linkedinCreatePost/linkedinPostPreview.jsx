@@ -6,11 +6,11 @@ export default function PostPreview({ watch, selectedImages }) {
   const content = watch("content");
 
   return (
-    <Card>
-      <CardContent className="p-6">
+    <Card className={'bg-white/95 backdrop-blur-lg supports-[backdrop-filter]:bg-white/60 border-none shadow-xl'}>
+      <CardContent className="p-6 ">
         <div className="space-y-4">
           <p className="text-sm font-medium">LinkedIn Post Preview</p>
-          <div className="rounded-md border p-4 bg-white ">
+          <div className="rounded-md border p-4 ">
             <div className="flex items-center gap-2 mb-3">
               <Avatar className="h-10 w-10">
                 <AvatarImage src="/placeholder-user.jpg" alt="User" />

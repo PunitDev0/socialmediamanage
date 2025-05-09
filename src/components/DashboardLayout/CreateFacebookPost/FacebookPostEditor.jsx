@@ -56,7 +56,7 @@ export default function FacebookPostEditor({
           <TabsTrigger value="ai">AI Sahayta</TabsTrigger>
         </TabsList>
         <TabsContent value="editor" className="space-y-4 mt-4">
-          <Card>
+          <Card className={'border-gray-300'}>
             <CardContent className="p-6">
               <form onSubmit={handleSubmit(schedulePost)} className="space-y-4">
                 <div className="flex items-center gap-2">

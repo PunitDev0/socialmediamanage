@@ -2,13 +2,12 @@ import { Button } from "@/components/ui/button";
 import { Save, Send } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
-export default function PinterestActionButtons({
+export default function ActionButtons({
   handleSubmit,
   saveAsDraft,
   isSaving,
-  isPosting,
+  isScheduling,
   saveSuccess,
-  isScheduled,
 }) {
   return (
     <div className="flex justify-end gap-2">
@@ -16,7 +15,7 @@ export default function PinterestActionButtons({
         type="button"
         variant="outline"
         onClick={handleSubmit(saveAsDraft)}
-        disabled={isSaving || isPosting}
+        disabled={isSaving}
       >
         {isSaving ? (
           <>Saving...</>
@@ -39,13 +38,13 @@ export default function PinterestActionButtons({
           </motion.div>
         )}
       </AnimatePresence>
-      <Button type="submit" disabled={isSaving || isPosting}>
-        {isPosting ? (
-          <>{isScheduled ? "Scheduling..." : "Posting..."}</>
+      <Button type="submit" disabled={isScheduling}>
+        {isScheduling ? (
+          <>Scheduling...</>
         ) : (
           <>
             <Send className="mr-2 h-4 w-4" />
-            {isScheduled ? "Schedule Pin" : "Post Now"}
+            Schedule Post
           </>
         )}
       </Button>

@@ -280,15 +280,15 @@ html {
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-gray-100 dark:bg-gray-800;
+  @apply bg-gray-100 ;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-violet-300 dark:bg-violet-700 rounded-full;
+  @apply bg-gray-300  rounded-full;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-violet-400 dark:bg-violet-600;
+  @apply bg-gray-400;
 }
 
 /* Font family utility */

@@ -1,21 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import Link from "next/link";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
-import {
+  ChevronLeft,
+  ChevronRight,
   Facebook,
   Instagram,
   Twitter,
@@ -23,426 +13,733 @@ import {
   Ticket,
   MousePointerSquareDashed,
   Loader2,
-  User,
-  Settings,
-  LogOut,
-  Users,
-  Bell,
-  Folder,
-  Star,
-  Clock,
   Linkedin,
   ExternalLink,
-  LayoutDashboard,
-  ChevronDown,
+  Calendar,
+  FileText,
+  BarChart2,
+  Image,
+  MessageSquare,
+  Globe,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import axios from "axios";
-import { motion, AnimatePresence } from "framer-motion"; // For animations
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
+import { motion, AnimatePresence } from "framer-motion";
 
-export default function Sidebar({ isSidebarOpen, isMobile, toggleSidebar }) {
-  const { user, loading, logout } = useAuth();
-  const [isChannelsOpen, setIsChannelsOpen] = useState(true);
-  const [isTeamsOpen, setIsTeamsOpen] = useState(false);
-  const [isProjectsOpen, setIsProjectsOpen] = useState(false);
+// Custom styles for enhanced sidebar
+const styles = `
+  .sidebar {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(240, 240, 240, 0.9));
+    backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1), transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 16px;
+  }
+
+  .sidebar-section {
+    border-bottom: 1px solid rgba(200, 200, 200, 0.15);
+    padding-bottom: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: rgba(100, 100, 100, 0.4);
+    border-radius: 8px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .social-item {
+    transition: all 0.3s ease;
+    border-radius: 8px;
+  }
+
+  .social-item:hover {
+    background-color: rgba(59, 130, 246, 0.15);
+    transform: translateX(8px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+  }
+
+  .profile-card {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(245, 245, 245, 0.8));
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    transition: transform 0.3s ease;
+  }
+
+  .profile-card:hover {
+    transform: translateY(-4px);
+  }
+
+  .section-title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0 12px;
+    margin-bottom: 8px;
+  }
+`;
+
+export function Sidebar({ isOpen, isMobile, toggleSidebar, account }) {
+  const { user, loading } = useAuth();
+  const [open, setOpen] = useState(isOpen);
   const [isLoading, setIsLoading] = useState({});
-  const router = useRouter();
+  const [connectedAccounts, setConnectedAccounts] = useState({});
 
-  const toggleChannels = () => setIsChannelsOpen((prev) => !prev);
-  const toggleTeams = () => setIsTeamsOpen((prev) => !prev);
-  const toggleProjects = () => setIsProjectsOpen((prev) => !prev);
-
-  // Map backend platform names to frontend display
-  const channels = [
-    { platform: "linkedin", Icon: Linkedin, label: "LinkedIn", profileUrl: (accountId) => `https://www.linkedin.com/in/${accountId}` },
-    { platform: "facebook", Icon: Facebook, label: "Facebook", profileUrl: (accountId) => `https://www.facebook.com/${accountId}` },
-    { platform: "instagram", Icon: Instagram, label: "Instagram", profileUrl: (accountId) => `https://www.instagram.com/${accountId}` },
-    { platform: "twitter", Icon: Twitter, label: "Twitter / X", profileUrl: (accountId) => `https://twitter.com/${accountId}` },
-    { platform: "threads", Icon: Twitter, label: "Threads", profileUrl: (accountId) => `https://www.threads.net/@${accountId}` },
-    { platform: "youtube", Icon: Youtube, label: "YouTube", profileUrl: (accountId) => `https://www.youtube.com/${accountId}` },
-    { platform: "tiktok", Icon: Ticket, label: "TikTok", profileUrl: (accountId) => `https://www.tiktok.com/@${accountId}` },
-    { platform: "pinterest", Icon: MousePointerSquareDashed, label: "Pinterest", profileUrl: (accountId) => `https://www.pinterest.com/${accountId}` },
-    { platform: "startpage", Icon: Loader2, label: "Startpage", profileUrl: () => "#" },
-    { platform: "bluesky", Icon: Loader2, label: "Bluesky", profileUrl: () => "#" },
-    { platform: "googlebusiness", Icon: Loader2, label: "Google Business Profile", profileUrl: () => "#" },
-    { platform: "mastodon", Icon: Loader2, label: "Mastodon", profileUrl: () => "#" },
-  ];
-
-  // Initialize connected accounts based on user.socialMedia
-  const [connectedAccounts, setConnectedAccounts] = useState(
-    channels.reduce((acc, { platform }) => ({ ...acc, [platform]: false }), {})
+  // Navigation items for social media management
+  const navItems = useMemo(
+    () => [
+      { icon: Calendar, label: "Content Calendar", href: "/dashboard/calendar" },
+      { icon: FileText, label: "Posts", href: "/dashboard/posts" },
+      { icon: BarChart2, label: "Analytics", href: "/dashboard/analytics" },
+      { icon: Image, label: "Media Library", href: "/dashboard/media" },
+      { icon: MessageSquare, label: "Engagement", href: "/dashboard/engagement" },
+      { icon: Globe, label: "Campaigns", href: "/dashboard/campaigns" },
+    ],
+    []
   );
 
-  // Update connected accounts when user data changes
-  useEffect(()=>{
+  // Social media channels
+  const channels = useMemo(
+    () => [
+      {
+        platform: "linkedin",
+        Icon: Linkedin,
+        label: "LinkedIn",
+        profileUrl: (accountId) => `https://www.linkedin.com/in/${accountId}`,
+        dashboardUrl: "/sync/linkedin/dashboard",
+      },
+      {
+        platform: "facebook",
+        Icon: Facebook,
+        label: "Facebook",
+        profileUrl: (accountId) => `https://www.facebook.com/${accountId}`,
+        dashboardUrl: "/sync/facebook/dashboard",
+      },
+      {
+        platform: "instagram",
+        Icon: Instagram,
+        label: "Instagram",
+        profileUrl: (accountId) => `https://www.instagram.com/${accountId}`,
+        dashboardUrl: "/sync/instagram/dashboard",
+      },
+      {
+        platform: "twitter",
+        Icon: Twitter,
+        label: "Twitter / X",
+        profileUrl: (accountId) => `https://twitter.com/${accountId}`,
+        dashboardUrl: "/sync/twitter/dashboard",
+      },
+      {
+        platform: "threads",
+        Icon: Twitter,
+        label: "Threads",
+        profileUrl: (accountId) => `https://www.threads.net/@${accountId}`,
+        dashboardUrl: "/sync/threads/dashboard",
+      },
+      {
+        platform: "youtube",
+        Icon: Youtube,
+        label: "YouTube",
+        profileUrl: (accountId) => `https://www.youtube.com/${accountId}`,
+        dashboardUrl: "/sync/youtube/dashboard",
+      },
+      {
+        platform: "tiktok",
+        Icon: Ticket,
+        label: "TikTok",
+        profileUrl: (accountId) => `https://www.tiktok.com/@${accountId}`,
+        dashboardUrl: "/sync/tiktok/dashboard",
+      },
+      {
+        platform: "pinterest",
+        Icon: MousePointerSquareDashed,
+        label: "Pinterest",
+        profileUrl: (accountId) => `https://www.pinterest.com/${accountId}`,
+        dashboardUrl: "/sync/pinterest/dashboard",
+      },
+      {
+        platform: "startpage",
+        Icon: Loader2,
+        label: "Startpage",
+        profileUrl: () => "#",
+        dashboardUrl: "/sync/startpage/dashboard",
+      },
+      {
+        platform: "bluesky",
+        Icon: Loader2,
+        label: "Bluesky",
+        profileUrl: () => "#",
+        dashboardUrl: "/sync/bluesky/dashboard",
+      },
+      {
+        platform: "googlebusiness",
+        Icon: Loader2,
+        label: "Google Business Profile",
+        profileUrl: () => "#",
+        dashboardUrl: "/sync/googlebusiness/dashboard",
+      },
+      {
+        platform: "mastodon",
+        Icon: Loader2,
+        label: "Mastodon",
+        profileUrl: () => "#",
+        dashboardUrl: "/sync/mastodon/dashboard",
+      },
+    ],
+    []
+  );
+
+  useEffect(() => {
     if (user && user.socialMedia) {
-      const updatedAccounts = channels.reduce((acc, { platform }) => {
-        const isConnected = user.socialMedia.some((sm) => sm.platform === platform);
-        return { ...acc, [platform]: isConnected };
-      }, {});
+      const updatedAccounts = channels.reduce(
+        (acc, { platform }) => ({
+          ...acc,
+          [platform]: user.socialMedia.some((sm) => sm.platform === platform),
+        }),
+        {}
+      );
       setConnectedAccounts(updatedAccounts);
     }
-  }, [user]);
- 
+  }, [user, channels]);
 
-  // Handle connection callbacks
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const status = urlParams.get("status");
-    const youtubeConnected = urlParams.get("youtubeConnected");
-    const facebookConnected = urlParams.get("facebookConnected");
-    const pinterestConnected = urlParams.get("pinterestConnected");
-
-    if (status === "connected") {
-      setConnectedAccounts((prev) => ({ ...prev, linkedin: true }));
-      setIsLoading((prev) => ({
-
- ...prev, linkedin: false }));
-      toast.success("LinkedIn connected successfully!");
-      window.history.replaceState({}, document.title, window.location.pathname);
-    } else if (youtubeConnected === "true") {
-      setConnectedAccounts((prev) => ({ ...prev, youtube: true }));
-      setIsLoading((prev) => ({ ...prev, youtube: false }));
-      toast.success("YouTube connected successfully!");
-      window.history.replaceState({}, document.title, window.location.pathname);
-    } else if (facebookConnected === "true") {
-      setConnectedAccounts((prev) => ({ ...prev, facebook: true }));
-      setIsLoading((prev) => ({ ...prev, facebook: false }));
-      toast.success("Facebook connected successfully!");
-      window.history.replaceState({}, document.title, window.location.pathname);
-    } else if (pinterestConnected === "true") {
-      setConnectedAccounts((prev) => ({ ...prev, pinterest: true }));
-      setIsLoading((prev) => ({ ...prev, pinterest: false }));
-      toast.success("Pinterest connected successfully!");
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-  }, []);
-
-  // Connect to social media platforms
-  const connectSocialMedia = async (platform) => {
-    setIsLoading((prev) => ({ ...prev, [platform]: true }));
-    try {
-      let authUrl;
-      if (platform === "linkedin") {
-        const response = await axios.get("http://localhost:5000/api/linkedin/auth", {
-          headers: { Authorization: `Bearer ${user.token}` },
-          withCredentials: true,
-        });
-        authUrl = response.data.authUrl;
-      } else if (platform === "youtube") {
-        const response = await axios.get("http://localhost:5000/api/youtube/auth", { withCredentials: true });
-        authUrl = response.data.authUrl;
-      } else if (platform === "facebook") {
-        const response = await axios.get("http://localhost:5000/api/facebook/auth", { withCredentials: true });
-        authUrl = response.data.authUrl;
-      } else if (platform === "pinterest") {
-        const response = await axios.get("http://localhost:5000/api/pinterest/auth", { withCredentials: true });
-        authUrl = response.data.authUrl;
-      } else {
-        throw new Error(`Connecting ${platform} is not implemented yet.`);
+  const connectSocialMedia = useCallback(
+    async (platform) => {
+      setIsLoading((prev) => ({ ...prev, [platform]: true }));
+      try {
+        const response = await axios.get(
+          `http://localhost:5000/api/${platform}/auth`,
+          {
+            headers: { Authorization: `Bearer ${user?.token}` },
+            withCredentials: true,
+          }
+        );
+        window.location.href = response.data.authUrl;
+      } catch (error) {
+        setIsLoading((prev) => ({ ...prev, [platform]: false }));
+        toast.error(`Failed to connect ${platform}: ${error.message}`);
       }
-      window.location.href = authUrl;
-    } catch (error) {
-      setIsLoading((prev) => ({ ...prev, [platform]: false }));
-      toast.error(`Failed to initiate ${platform} connection: ${error.message}`);
-    }
+    },
+    [user]
+  );
+
+  // Animation variants for items
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20, scale: 0.95 },
+    visible: (i) => ({
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      transition: { delay: i * 0.12, duration: 0.5, ease: "easeOut" },
+    }),
+    hover: { scale: 1.08, x: 8, transition: { duration: 0.25, ease: "easeOut" } },
   };
 
-  // Handle logout
-  const handleLogout = async () => {
-    try {
-      await logout();
-      router.push("/login");
-      toast.success("Logged out successfully!");
-    } catch (error) {
-      toast.error("Failed to log out");
-    }
+  // Profile animation
+  const profileVariants = {
+    hidden: { opacity: 0, scale: 0.85, y: 20 },
+    visible: {
+      opacity: 1,
+      scale: 1,
+      y: 0,
+      transition: { duration: 0.6, ease: "easeOut" },
+    },
   };
 
-  // if (loading) {
-  //   return (
-  //     <div className="p-4 flex items-center justify-center h-screen bg-gradient-to-b from-gray-50 to-gray-100">
-  //       <Loader2 className="h-8 w-8 animate-spin text-primary" />
-  //     </div>
-  //   );
-  // }
+  // Sidebar animation
+  const sidebarVariants = {
+    hidden: { x: -100, opacity: 0 },
+    visible: {
+      x: 0,
+      opacity: 1,
+      transition: { duration: 0.6, ease: "easeOut" },
+    },
+  };
+
+  // For mobile, use Sheet component
+  if (isMobile) {
+    return (
+      <Sheet open={isOpen} onOpenChange={(open) => {
+        setOpen(open);
+        toggleSidebar();
+      }}>
+        <SheetContent side="left" className="p-0 w-[300px] rounded-r-2xl">
+          <MobileSidebarContent
+            navItems={navItems}
+            channels={channels}
+            connectedAccounts={connectedAccounts}
+            isLoading={isLoading}
+            connectSocialMedia={connectSocialMedia}
+            account={account}
+          />
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
+  // For desktop, use floating sidebar
+  return (
+    <motion.div
+      className={cn("sidebar fixed top-4 left-4 z-40 h-[calc(100vh-2rem)]")}
+      variants={sidebarVariants}
+      initial="hidden"
+      animate="visible"
+      style={{ width: isOpen ? 300 : 72 }}
+    >
+      <style>{styles}</style>
+      <div className="flex h-full flex-col">
+        {/* Logo and collapse button */}
+        <motion.div
+          className="flex h-16 items-center justify-between px-4 border-b border-gray-100/50 dark:border-gray-800/50"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.2 }}
+        >
+          <Link href="/sync/account/dashboard" className="flex items-center">
+            <motion.div
+              className="h-8 w-8 rounded-md bg-primary flex items-center justify-center"
+              whileHover={{ scale: 1.15, rotate: 15, boxShadow: "0 0 15px rgba(59, 130, 246, 0.3)" }}
+              whileTap={{ scale: 0.9 }}
+              transition={{ duration: 0.25 }}
+            >
+              <span className="text-primary-foreground font-bold">A</span>
+            </motion.div>
+            {isOpen && (
+              <motion.span
+                className="ml-3 font-semibold text-xl tracking-tight"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.4, delay: 0.3 }}
+              >
+                SocialSync
+              </motion.span>
+            )}
+          </Link>
+          <motion.div whileHover={{ scale: 1.3 }} whileTap={{ scale: 0.85 }}>
+            <Button variant="ghost" size="icon" onClick={toggleSidebar} className="h-9 w-9">
+              <motion.div
+                animate={{ rotate: isOpen ? 0 : 180 }}
+                transition={{ duration: 0.4, ease: "easeInOut" }}
+              >
+                {isOpen ? <ChevronLeft className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
+              </motion.div>
+            </Button>
+          </motion.div>
+        </motion.div>
+
+        {/* Channels Section (Scrollable) */}
+        <div className="sidebar-section px-3 py-4">
+          {isOpen && (
+            <motion.h3
+              className="section-title"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.4, delay: 0.4 }}
+            >
+              Connected Channels
+            </motion.h3>
+          )}
+          <ScrollArea className="h-[300px] scrollbar-thin">
+            <motion.div
+              className="mt-2 space-y-2"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.5 }}
+            >
+              {channels.map((channel, i) => (
+                <motion.div
+                  key={channel.platform}
+                  custom={i}
+                  initial="hidden"
+                  animate="visible"
+                  variants={itemVariants}
+                  whileHover="hover"
+                >
+                  <Link
+                    href={channel.dashboardUrl}
+                    className={cn(
+                      "flex items-center justify-between rounded-md px-3 py-2 text-sm font-medium social-item",
+                      account === channel.label.toLowerCase() && "bg-primary/15 text-primary"
+                    )}
+                  >
+                    <div className="flex items-center">
+                      <motion.div
+                        whileHover={{ scale: 1.25, rotate: 10 }}
+                        transition={{ duration: 0.25 }}
+                      >
+                        <channel.Icon className="h-5 w-5" />
+                      </motion.div>
+                      {isOpen && <span className="ml-3 font-medium">{channel.label}</span>}
+                    </div>
+                    {isOpen && (
+                      connectedAccounts[channel.platform] ? (
+                        <div className="flex items-center gap-2">
+                          <Badge
+                            variant="outline"
+                            className="bg-green-100/70 text-green-800 border-green-300/70 text-xs font-semibold"
+                          >
+                            Connected
+                          </Badge>
+                          {channel.profileUrl(
+                            user?.socialMedia?.find((sm) => sm.platform === channel.platform)?.accountId
+                          ) !== "#" && (
+                            <motion.a
+                              href={channel.profileUrl(
+                                user?.socialMedia?.find((sm) => sm.platform === channel.platform)?.accountId
+                              )}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-primary hover:text-primary/80"
+                              whileHover={{ scale: 1.3, rotate: 5 }}
+                              whileTap={{ scale: 0.9 }}
+                              transition={{ duration: 0.2 }}
+                            >
+                              <ExternalLink className="h-4 w-4" />
+                            </motion.a>
+                          )}
+                        </div>
+                      ) : (
+                        <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-xs border-primary/30 hover:bg-primary/15 font-semibold"
+                            onClick={() => connectSocialMedia(channel.platform)}
+                            disabled={isLoading[channel.platform]}
+                          >
+                            {isLoading[channel.platform] ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              "Connect"
+                            )}
+                          </Button>
+                        </motion.div>
+                      )
+                    )}
+                  </Link>
+                </motion.div>
+              ))}
+            </motion.div>
+          </ScrollArea>
+        </div>
+
+        {/* Navigation Section */}
+        <ScrollArea className="flex-1 px-3 py-4 scrollbar-thin">
+          <div className="sidebar-section">
+            {isOpen && (
+              <motion.h3
+                className="section-title"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.4, delay: 0.6 }}
+              >
+                Management Tools
+              </motion.h3>
+            )}
+            {navItems.map((item, i) => (
+              <motion.div
+                key={item.label}
+                custom={i}
+                initial="hidden"
+                animate="visible"
+                variants={itemVariants}
+                whileHover="hover"
+              >
+                <Link
+                  href={item.href}
+                  className={cn(
+                    "flex items-center rounded-md px-3 py-2 text-sm font-medium social-item",
+                    "hover:text-primary",
+                    account === item.label.toLowerCase() && "bg-primary/15 text-primary"
+                  )}
+                >
+                  <motion.div
+                    whileHover={{ rotate: 8, scale: 1.2 }}
+                    transition={{ duration: 0.25 }}
+                  >
+                    <item.icon className="h-5 w-5" />
+                  </motion.div>
+                  {isOpen && <span className="ml-3 font-medium">{item.label}</span>}
+                </Link>
+              </motion.div>
+            ))}
+          </div>
+        </ScrollArea>
+
+        {/* Footer with User Details */}
+        <motion.div
+          className="mt-auto border-t border-gray-100/50 dark:border-gray-800/50 px-4 py-4"
+          variants={profileVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          {isOpen && (
+            <div className="profile-card">
+              <div className="flex items-center gap-3">
+                <motion.div
+                  className="h-12 w-12 rounded-full bg-gradient-to-r from-primary/25 to-primary/45 flex items-center justify-center"
+                  whileHover={{ scale: 1.15, boxShadow: "0 0 20px rgba(59, 130, 246, 0.4)" }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <span className="text-primary font-bold text-lg">
+                    {user?.name?.[0] || "U"}
+                  </span>
+                </motion.div>
+                <div>
+                  <motion.p
+                    className="text-sm font-semibold text-gray-800"
+                    initial={{ opacity: 0, x: -15 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.4, delay: 0.3 }}
+                  >
+                    {user?.name || "User"}
+                  </motion.p>
+                  <motion.p
+                    className="text-xs text-gray-500"
+                    initial={{ opacity: 0, x: -15 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.4, delay: 0.4 }}
+                  >
+                    {user?.email || "user@example.com"}
+                  </motion.p>
+                </div>
+              </div>
+            </div>
+          )}
+        </motion.div>
+      </div>
+    </motion.div>
+  );
+}
+
+// Mobile sidebar content
+function MobileSidebarContent({
+  navItems,
+  channels,
+  connectedAccounts,
+  isLoading,
+  connectSocialMedia,
+  account,
+}) {
+  const { user } = useAuth();
 
   return (
-    <TooltipProvider>
-      <motion.aside
-        initial={{ x: isMobile ? "-100%" : 0 }}
-        animate={{ x: isSidebarOpen || !isMobile ? 0 : "-100%" }}
-        transition={{ duration: 0.3, ease: "easeInOut" }}
-        className={cn(
-          "w-72 flex-shrink-0 overflow-y-auto border-r bg-gradient-to-b from-white to-gray-50 fixed top-0 left-0 h-screen z-50 shadow-lg",
-          isMobile && !isSidebarOpen && "hidden"
-        )}
+    <div className="flex h-full flex-col">
+      {/* Logo */}
+      <motion.div
+        className="flex h-16 items-center px-4 border-b border-gray-100/50 dark:border-gray-800/50"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
       >
-        <div className="flex flex-col h-full">
-          {/* Sidebar Header */}
-          <div className="flex h-16 items-center border-b px-4 bg-white/80 backdrop-blur-sm">
-            <div className="flex items-center gap-2 font-bold text-lg">
-              <motion.div
-                className="size-8 rounded-full bg-gradient-to-br from-purple-600 to-blue-500 flex items-center justify-center text-white"
-                whileHover={{ scale: 1.1 }}
-                transition={{ duration: 0.2 }}
-              >
-                AP
-              </motion.div>
-              <span className="text-gray-800">AutoPulse</span>
-            </div>
-            {isMobile && (
-              <Button variant="ghost" size="icon" className="ml-auto" onClick={toggleSidebar}>
-                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M18 6 6 18" />
-                  <path d="m6 6 12 12" />
-                </svg>
-              </Button>
-            )}
-          </div>
+        <Link href="/sync/account/dashboard" className="flex items-center">
+          <motion.div
+            className="h-8 w-8 rounded-md bg-primary flex items-center justify-center"
+            whileHover={{ scale: 1.15, rotate: 15, boxShadow: "0 0 15px rgba(59, 130, 246, 0.3)" }}
+            whileTap={{ scale: 0.9 }}
+            transition={{ duration: 0.25 }}
+          >
+            <span className="text-primary-foreground font-bold">A</span>
+          </motion.div>
+          <motion.span
+            className="ml-3 font-semibold text-xl tracking-tight"
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.4 }}
+          >
+            SocialSync
+          </motion.span>
+        </Link>
+      </motion.div>
 
-          {/* Sidebar Content */}
-          <div className="p-4 space-y-6 flex-1 overflow-y-auto">
-            {/* Channels Section */}
-            <div>
-              <Button
-                variant="ghost"
-                className="w-full justify-between text-sm font-semibold mb-2 text-gray-700 hover:bg-gray-100 rounded-lg"
-                onClick={toggleChannels}
+      {/* Channels Section (Scrollable) */}
+      <div className="sidebar-section px-3 py-4">
+        <motion.h3
+          className="section-title"
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.4 }}
+        >
+          Connected Channels
+        </motion.h3>
+        <ScrollArea className="h-[300px] scrollbar-thin">
+          <motion.div
+            className="mt-2 space-y-2"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+          >
+            {channels.map((channel, i) => (
+              <motion.div
+                key={channel.platform}
+                custom={i}
+                initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ delay: i * 0.12, duration: 0.5 }}
+                whileHover={{ scale: 1.08, x: 8 }}
               >
-                <span>Channels</span>
-                <motion.div animate={{ rotate: isChannelsOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
-                  <ChevronDown className="h-4 w-4" />
-                </motion.div>
-              </Button>
-              <AnimatePresence>
-                {isChannelsOpen && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="space-y-3 pl-2"
-                  >
-                    <div className="flex items-center gap-2 mb-3">
-                      <Avatar className="h-8 w-8 ring-2 ring-purple-200">
-                        <AvatarImage src="/placeholder-user.jpg" alt={user?.name || "User"} />
-                        <AvatarFallback className="bg-purple-100 text-purple-600">{user?.name?.[0] || "U"}</AvatarFallback>
-                      </Avatar>
-                      <span className="font-medium text-gray-800">{user?.name || "User"}</span>
-                    </div>
-                    {channels.map(({ platform, Icon, label, profileUrl }) => {
-                      const isConnected = connectedAccounts[platform];
-                      const accountId = isConnected
-                        ? user.socialMedia.find((sm) => sm.platform === platform)?.accountId
-                        : null;
-                      return (
-                        <motion.div
-                          key={platform}
-                          className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                          whileHover={{ x: 5 }}
+                <Link
+                  href={channel.dashboardUrl}
+                  className={cn(
+                    "flex items-center justify-between rounded-md px-3 py-2 text-sm font-medium social-item",
+                    account === channel.label.toLowerCase() && "bg-primary/15 text-primary"
+                  )}
+                >
+                  <div className="flex items-center">
+                    <motion.div
+                      whileHover={{ scale: 1.25, rotate: 10 }}
+                      transition={{ duration: 0.25 }}
+                    >
+                      <channel.Icon className="h-5 w-5" />
+                    </motion.div>
+                    <span className="ml-3 font-medium">{channel.label}</span>
+                  </div>
+                  {connectedAccounts[channel.platform] ? (
+                    <div className="flex items-center gap-2">
+                      <Badge
+                        variant="outline"
+                        className="bg-green-100/70 text-green-800 border-green-300/70 text-xs font-semibold"
+                      >
+                        Connected
+                      </Badge>
+                      {channel.profileUrl(
+                        user?.socialMedia?.find((sm) => sm.platform === channel.platform)?.accountId
+                      ) !== "#" && (
+                        <motion.a
+                          href={channel.profileUrl(
+                            user?.socialMedia?.find((sm) => sm.platform === channel.platform)?.accountId
+                          )}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary hover:text-primary/80"
+                          whileHover={{ scale: 1.3, rotate: 5 }}
+                          whileTap={{ scale: 0.9 }}
                           transition={{ duration: 0.2 }}
                         >
-                          <div className="flex items-center gap-3">
-                            <Icon className="h-5 w-5 text-gray-600" />
-                            <span className="text-sm text-gray-700">{label}</span>
-                          </div>
-                          {isConnected ? (
-                            <div className="flex items-center gap-2">
-                              <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300">
-                                Connected
-                              </Badge>
-                              {accountId && profileUrl(accountId) !== "#" && (
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <a
-                                      href={profileUrl(accountId)}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="text-blue-500 hover:text-blue-700"
-                                    >
-                                      <ExternalLink className="h-4 w-4" />
-                                    </a>
-                                  </TooltipTrigger>
-                                  <TooltipContent>Visit Profile</TooltipContent>
-                                </Tooltip>
-                              )}
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Link href={`/dashboard/?sync=${platform}`}>
-                                    <LayoutDashboard className="h-4 w-4 text-blue-500 hover:text-blue-700" />
-                                  </Link>
-                                </TooltipTrigger>
-                                <TooltipContent>Sync Dashboard</TooltipContent>
-                              </Tooltip>
-                            </div>
-                          ) : (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="border-purple-300 text-purple-600 hover:bg-purple-50"
-                              onClick={() => connectSocialMedia(platform)}
-                              disabled={isLoading[platform]}
-                            >
-                              {isLoading[platform] ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                "Connect"
-                              )}
-                            </Button>
-                          )}
-                        </motion.div>
-                      );
-                    })}
-                  </motion.div>
+                          <ExternalLink className="h-4 w-4" />
+                        </motion.a>
+                      )}
+                    </div>
+                  ) : (
+                    <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-xs border-primary/30 hover:bg-primary/15 font-semibold"
+                        onClick={() => connectSocialMedia(channel.platform)}
+                        disabled={isLoading[channel.platform]}
+                      >
+                        {isLoading[channel.platform] ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          "Connect"
+                        )}
+                      </Button>
+                    </motion.div>
+                  )}
+                </Link>
+              </motion.div>
+            ))}
+          </motion.div>
+        </ScrollArea>
+      </div>
+
+      {/* Navigation Section */}
+      <ScrollArea className="flex-1 px-3 py-4 scrollbar-thin">
+        <div className="sidebar-section">
+          <motion.h3
+            className="section-title"
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.4 }}
+          >
+            Management Tools
+          </motion.h3>
+          {navItems.map((item, i) => (
+            <motion.div
+              key={item.label}
+              custom={i}
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ delay: i * 0.12, duration: 0.5 }}
+              whileHover={{ scale: 1.08, x: 8 }}
+            >
+              <Link
+                href={item.href}
+                className={cn(
+                  "flex items-center rounded-md px-3 py-2 text-sm font-medium social-item",
+                  "hover:text-primary",
+                  account === item.label.toLowerCase() && "bg-primary/15 text-primary"
                 )}
-              </AnimatePresence>
+              >
+                <motion.div
+                  whileHover={{ rotate: 8, scale: 1.2 }}
+                  transition={{ duration: 0.25 }}
+                >
+                  <item.icon className="h-5 w-5" />
+                </motion.div>
+                <span className="ml-3 font-medium">{item.label}</span>
+              </Link>
+            </motion.div>
+          ))}
+        </div>
+      </ScrollArea>
+
+      {/* Footer with User Details */}
+      <motion.div
+        className="mt-auto border-t border-gray-100/50 dark:border-gray-800/50 px-4 py-4"
+        initial={{ opacity: 0, scale: 0.85, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+      >
+        <div className="profile-card">
+          <div className="flex items-center gap-3">
+            <motion.div
+              className="h-12 w-12 rounded-full bg-gradient-to-r from-primary/25 to-primary/45 flex items-center justify-center"
+              whileHover={{ scale: 1.15, boxShadow: "0 0 20px rgba(59, 130, 246, 0.4)" }}
+              transition={{ duration: 0.3 }}
+            >
+              <span className="text-primary font-bold text-lg">
+                {user?.name?.[0] || "U"}
+              </span>
+            </motion.div>
+            <div>
+              <motion.p
+                className="text-sm font-semibold text-gray-800"
+                initial={{ opacity: 0, x: -15 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.4, delay: 0.3 }}
+              >
+                {user?.name || "User"}
+              </motion.p>
+              <motion.p
+                className="text-xs text-gray-500"
+                initial={{ opacity: 0, x: -15 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.4, delay: 0.4 }}
+              >
+                {user?.email || "user@example.com"}
+              </motion.p>
             </div>
-
-            {/* Teams Section */}
-            {/* <div>
-              <Button
-                variant="ghost"
-                className="w-full justify-between text-sm font-semibold mb-2 text-gray-700 hover:bg-gray-100 rounded-lg"
-                onClick={toggleTeams}
-              >
-                <span>Teams</span>
-                <motion.div animate={{ rotate: isTeamsOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
-                  <ChevronDown className="h-4 w-4" />
-                </motion.div>
-              </Button>
-              <AnimatePresence>
-                {isTeamsOpen && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="space-y-2 pl-2"
-                  >
-                    <motion.div className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100" whileHover={{ x: 5 }}>
-                      <Users className="h-5 w-5 text-gray-600" />
-                      <span className="text-sm text-gray-700">Marketing Team</span>
-                    </motion.div>
-                    <motion.div className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100" whileHover={{ x: 5 }}>
-                      <Users className="h-5 w-5 text-gray-600" />
-                      <span className="text-sm text-gray-700">Content Creators</span>
-                    </motion.div>
-                    <Button
-                      variant="ghost"
-                      className="w-full justify-start text-sm text-purple-600 hover:bg-purple-50 rounded-lg"
-                    >
-                      Add New Team
-                    </Button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div> */}
-
-            {/* Projects Section */}
-            {/* <div>
-              <Button
-                variant="ghost"
-                className="w-full justify-between text-sm font-semibold mb-2 text-gray-700 hover:bg-gray-100 rounded-lg"
-                onClick={toggleProjects}
-              >
-                <span>Projects</span>
-                <motion.div animate={{ rotate: isProjectsOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
-                  <ChevronDown className="h-4 w-4" />
-                </motion.div>
-              </Button>
-              <AnimatePresence>
-                {isProjectsOpen && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="space-y-2 pl-2"
-                  >
-                    <motion.div className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100" whileHover={{ x: 5 }}>
-                      <Folder className="h-5 w-5 text-gray-600" />
-                      <span className="text-sm text-gray-700">Spring Campaign</span>
-                    </motion.div>
-                    <motion.div className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100" whileHover={{ x: 5 }}>
-                      <Folder className="h-5 w-5 text-gray-600" />
-                      <span className="text-sm text-gray-700">Product Launch</span>
-                    </motion.div>
-                    <motion.div className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100" whileHover={{ x: 5 }}>
-                      <Star className="h-5 w-5 text-gray-600" />
-                      <span className="text-sm text-gray-700">Favorites</span>
-                    </motion.div>
-                    <Button
-                      variant="ghost"
-                      className="w-full justify-start text-sm text-purple-600 hover:bg-purple-50 rounded-lg"
-                    >
-                      New Project
-                    </Button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div> */}
-
-            {/* Quick Links */}
-            {/* <div className="space-y-2">
-              <motion.div className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100" whileHover={{ x: 5 }}>
-                <Bell className="h-5 w-5 text-gray-600" />
-                <span className="text-sm text-gray-700">Notifications</span>
-              </motion.div>
-              <motion.div className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100" whileHover={{ x: 5 }}>
-                <Clock className="h-5 w-5 text-gray-600" />
-                <span className="text-sm text-gray-700">Recent Activity</span>
-              </motion.div>
-            </div> */}
-          </div>
-
-          {/* User Profile */}
-          <div className="p-4 border-t bg-white/80 backdrop-blur-sm">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start px-2 hover:bg-gray-100 rounded-lg"
-                >
-                  <Avatar className="mr-2 h-8 w-8 ring-2 ring-purple-200">
-                    <AvatarImage src="/placeholder-user.jpg" alt={user?.name || "User"} />
-                    <AvatarFallback className="bg-purple-100 text-purple-600">{user?.name?.[0] || "U"}</AvatarFallback>
-                  </Avatar>
-                  <div className="flex flex-col items-start text-sm">
-                    <span className="text-gray-800">{user?.name || "User"}</span>
-                    <span className="text-xs text-gray-500">{user?.email || "user@example.com"}</span>
-                  </div>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 bg-white shadow-lg rounded-lg">
-                <DropdownMenuLabel className="text-gray-800">My Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => router.push("/profile")}
-                  className="text-gray-700 hover:bg-purple-50 cursor-pointer"
-                >
-                  <User className="mr-2 h-4 w-4" />
-                  <span>Profile</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="text-gray-700 hover:bg-purple-50 cursor-pointer">
-                  <Settings className="mr-2 h-4 w-4" />
-                  <span>Settings</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={handleLogout}
-                  className="text-red-600 hover:bg-red-50 cursor-pointer"
-                >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Log out</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
         </div>
-      </motion.aside>
-    </TooltipProvider>
+      </motion.div>
+    </div>
   );
 }

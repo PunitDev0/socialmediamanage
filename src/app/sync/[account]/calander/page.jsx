@@ -1,10 +1,11 @@
-import ScheduledPostsPage from '@/components/schedule-post/schedule-post'
+
+import CalanderPage from '@/components/Calander/calanderPage'
 import React from 'react'
 
 function page() {
   return (
     <div>
-       <ScheduledPostsPage/>
+      <CalanderPage/>
     </div>
   )
 }

@@ -214,52 +214,54 @@ export default function CreateYouTubePostPage() {
   };
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight">Create YouTube Post</h1>
-        <p className="text-muted-foreground">Create or schedule a YouTube video or community post</p>
-      </div>
-      <div className="grid gap-6 md:grid-cols-2">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          className="space-y-4"
-        >
-          <YouTubePostEditor
-            control={control}
-            handleSubmit={handleSubmit}
-            setValue={setValue}
-            watch={watch}
-            errors={errors}
-            selectedVideo={selectedVideo}
-            selectedThumbnail={selectedThumbnail}
-            selectedImages={selectedImages}
-            isDragging={isDragging}
-            videoInputRef={videoInputRef}
-            thumbnailInputRef={thumbnailInputRef}
-            imageInputRef={imageInputRef}
-            handleFileUpload={handleFileUpload}
-            handleDragOver={handleDragOver}
-            handleDragLeave={handleDragLeave}
-            handleDrop={handleDrop}
-            removeFile={removeFile}
-            saveAsDraft={saveAsDraft}
-            submitPost={submitPost}
-            isSaving={isSaving}
-            isPosting={isPosting}
-            saveSuccess={saveSuccess}
-          />
-        </motion.div>
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.2 }}
-          className="space-y-4"
-        >
-          <YouTubePostPreview watch={watch} selectedThumbnail={selectedThumbnail} selectedImages={selectedImages} />
-          <YouTubePostSettings control={control} watch={watch} />
-        </motion.div>
+    <div className="min-h-screen flex flex-col gap-6 bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
+      <div className=" max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-20">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-3xl font-bold tracking-tight">Create YouTube Post</h1>
+          <p className="text-muted-foreground">Create or schedule a YouTube video or community post</p>
+        </div>
+        <div className="grid gap-6 md:grid-cols-2 ">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="space-y-4"
+          >
+            <YouTubePostEditor
+              control={control}
+              handleSubmit={handleSubmit}
+              setValue={setValue}
+              watch={watch}
+              errors={errors}
+              selectedVideo={selectedVideo}
+              selectedThumbnail={selectedThumbnail}
+              selectedImages={selectedImages}
+              isDragging={isDragging}
+              videoInputRef={videoInputRef}
+              thumbnailInputRef={thumbnailInputRef}
+              imageInputRef={imageInputRef}
+              handleFileUpload={handleFileUpload}
+              handleDragOver={handleDragOver}
+              handleDragLeave={handleDragLeave}
+              handleDrop={handleDrop}
+              removeFile={removeFile}
+              saveAsDraft={saveAsDraft}
+              submitPost={submitPost}
+              isSaving={isSaving}
+              isPosting={isPosting}
+              saveSuccess={saveSuccess}
+            />
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.2 }}
+            className="space-y-4"
+          >
+            <YouTubePostPreview watch={watch} selectedThumbnail={selectedThumbnail} selectedImages={selectedImages} />
+            <YouTubePostSettings control={control} watch={watch} />
+          </motion.div>
+        </div>
       </div>
     </div>
   );

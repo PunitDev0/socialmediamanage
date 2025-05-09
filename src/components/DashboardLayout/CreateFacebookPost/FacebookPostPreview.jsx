@@ -15,7 +15,7 @@ export default function FacebookPostPreview({ watch, selectedMedia, postType }) 
       <CardContent className="p-6">
         <div className="space-y-4">
           <p className="text-sm font-medium">Facebook Preview</p>
-          <div className="rounded-md border p-4 bg-white dark:bg-gray-900">
+          <div className="rounded-md border p-4 ">
             <div className="flex items-center gap-2 mb-3">
               <Avatar className="h-10 w-10">
                 <AvatarImage src="/placeholder-user.jpg" alt="User" />

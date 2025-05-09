@@ -14,7 +14,7 @@ export default function PostSettings({
   setEnableAutoHashtags,
 }) {
   return (
-    <Card>
+    <Card className={'bg-white/95 backdrop-blur-lg supports-[backdrop-filter]:bg-white/60 shadow-xl border-none'}>
       <CardHeader>
         <CardTitle className="text-lg">Post Settings</CardTitle>
       </CardHeader>

@@ -41,7 +41,7 @@ export default function LoginPage() {
 
       // Short delay before redirect for success animation
       setTimeout(() => {
-        router.push("/dashboard") // Redirect to dashboard
+        router.push("/sync/account/dashboard") // Redirect to dashboard
       }, 1000)
     } catch (error) {
       console.error("Login failed:", error.message)

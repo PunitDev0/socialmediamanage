@@ -1,106 +1,77 @@
 import { Controller } from "react-hook-form";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon, Clock } from "lucide-react";
-import { format, addDays } from "date-fns";
+import { CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 
-export default function PinterestSchedulePicker({ control, watch, errors }) {
-  const isScheduled = watch("isScheduled");
+export default function SchedulePicker({ control, watch, errors }) {
+  const selectedDateTime = watch("dateTime"); // Watch the combined date and time field
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <p className="text-sm font-medium">Pin Timing</p>
-        <Controller
-          name="isScheduled"
-          control={control}
-          render={({ field }) => (
-            <Select value={field.value.toString()} onValueChange={(value) => field.onChange(value === "true")}>
-              <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="Select timing" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="false">Post Now</SelectItem>
-                <SelectItem value="true">Schedule Pin</SelectItem>
-              </SelectContent>
-            </Select>
-          )}
-        />
-      </div>
-
-      {isScheduled && (
-        <div className="flex gap-2 flex-col">
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(
-                  "w-full justify-start text-left font-normal",
-                  !watch("date") && "text-muted-foreground"
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {watch("date") ? format(watch("date"), "PPP") : "Pick a date"}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+      className="space-y-3"
+    >
+      <label className="text-sm font-medium text-gray-700">Schedule Post</label>
+      <div className="flex flex-col gap-3">
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className={cn(
+                "w-full sm:w-64 justify-start text-left font-medium text-gray-800 bg-gradient-to-r from-indigo-50 to-purple-50 hover:from-indigo-100 hover:to-purple-100 transition-all duration-300 shadow-sm border border-gray-200 rounded-lg py-2.5",
+                !selectedDateTime && "text-gray-500"
+              )}
+            >
+              <CalendarIcon className="mr-2 h-5 w-5 text-indigo-500" />
+              {selectedDateTime ? (
+                format(new Date(selectedDateTime), "MMM dd, yyyy, hh:mm a")
+              ) : (
+                <span>Pick date & time</span>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+          >
+            <PopoverContent className="p-4 bg-white rounded-lg shadow-xl border border-gray-100">
               <Controller
-                name="date"
+                name="dateTime"
                 control={control}
-                rules={{ required: isScheduled ? "Date is required" : false }}
+                rules={{ required: "Date and time are required" }}
                 render={({ field }) => (
-                  <Calendar
-                    mode="single"
-                    selected={field.value}
-                    onSelect={field.onChange}
-                    disabled={(date) => date > addDays(new Date(), 30) || date < new Date()}
-                    initialFocus
+                  <input
+                    type="datetime-local"
+                    value={field.value || ""}
+                    onChange={(e) => field.onChange(e.target.value)}
+                    className={cn(
+                      "w-full border border-gray-300 rounded-md p-3 text-sm text-gray-800 bg-gray-50 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-all duration-200",
+                      errors.dateTime && "border-red-400 focus:ring-red-400"
+                    )}
                   />
                 )}
               />
             </PopoverContent>
-          </Popover>
-          {errors.date && (
-            <p className="text-red-500 text-xs mt-1">{errors.date.message}</p>
-          )}
-
-          <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-muted-foreground" />
-            <Controller
-              name="time"
-              control={control}
-              rules={{ required: isScheduled ? "Time is required" : false }}
-              render={({ field }) => (
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger className="w-[110px]">
-                    <SelectValue placeholder="Select time" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Array.from({ length: 24 }).map((_, hour) =>
-                      [0, 30].map((minute) => {
-                        const formattedHour = hour.toString().padStart(2, "0");
-                        const formattedMinute = minute.toString().padStart(2, "0");
-                        const timeValue = `${formattedHour}:${formattedMinute}`;
-                        return (
-                          <SelectItem key={timeValue} value={timeValue}>
-                            {timeValue}
-                          </SelectItem>
-                        );
-                      })
-                    )}
-                  </SelectContent>
-                </Select>
-              )}
-            />
-          </div>
-          {errors.time && (
-            <p className="text-red-500 text-xs mt-1">{errors.time.message}</p>
-          )}
-        </div>
-      )}
-    </div>
+          </motion.div>
+        </Popover>
+        {errors.dateTime && (
+          <motion.p
+            initial={{ opacity: 0, y: -5 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            className="text-red-500 text-xs font-medium"
+          >
+            {errors.dateTime.message}
+          </motion.p>
+        )}
+      </div>
+    </motion.div>
   );
 }

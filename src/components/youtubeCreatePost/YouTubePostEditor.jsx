@@ -39,6 +39,7 @@ export default function YouTubePostEditor({
   const postType = watch("postType");
 
   return (
+    <div className="">
     <Tabs defaultValue="editor" className="w-full">
       <TabsList className="w-full grid grid-cols-3">
         <TabsTrigger value="editor">Editor</TabsTrigger>
@@ -199,5 +200,6 @@ export default function YouTubePostEditor({
         </Card>
       </TabsContent>
     </Tabs>
+    </div>
   );
 }

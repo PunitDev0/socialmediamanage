@@ -26,7 +26,7 @@ export default function MediaUploader({
     <>
       <div
         className={cn(
-          "border-2 border-dashed rounded-md p-6 transition-colors",
+          "border-2 border-dashed rounded-md p-6 transition-colors ",
           isDragging ? "border-primary bg-primary/5" : "border-muted-foreground/20",
           selectedImages.length > 0 ? "p-2" : "p-6"
         )}
@@ -46,7 +46,7 @@ export default function MediaUploader({
                 <Button
                   variant="destructive"
                   size="icon"
-                  className="absolute top-2 right-2 h-6 w-6 rounded-full"
+                  className="absolute top-2 right-2 h-6 w-6 rounded-full bg-black"
                   onClick={() => removeImage(index)}
                 >
                   <X className="h-3 w-3" />
